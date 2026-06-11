@@ -23,6 +23,8 @@ jobs:
           context: .
           target: test
           push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Login to GHCR
         if: github.event_name == 'push'
@@ -41,6 +43,8 @@ jobs:
           tags: |
             ghcr.io/thenickfish/docker-ai-sbx:latest
             ghcr.io/thenickfish/docker-ai-sbx:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Install sbx
         if: github.event_name == 'push'
@@ -52,7 +56,7 @@ jobs:
           echo "3c2c1f7e9a3552b594b51b52d479a6c7ffdfd7e2d02a59845a0dc60ea9e71f45  /tmp/get-docker.sh" | sha256sum -c
           sudo REPO_ONLY=1 sh /tmp/get-docker.sh
           sudo apt-get install docker-sbx
-          echo $GH_TOKEN | sbx login --username ${{ github.actor }} --password-stdin
+          echo "$GH_TOKEN" | sbx secret set --registry ghcr.io --password-stdin
 
       - name: Push kit
         if: github.event_name == 'push'
