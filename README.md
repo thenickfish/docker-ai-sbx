@@ -9,30 +9,41 @@ A custom Docker image for Claude Code sandboxes, extending the official `docker/
 
 ## Usage
 
-### Build
+Run using published artifacts:
 
 ```bash
-docker build -t sbx:latest .
+sbx run claude --template ghcr.io/thenickfish/docker-ai-sbx:latest --kit ghcr.io/thenickfish/docker-ai-sbx-kit:latest
 ```
 
-### Export, load, and run using the kit
+## Development
+
+### Build & publish
+
+CI builds and publishes on every push to `main`. To publish manually:
+
+```bash
+# Build
+docker build -t ghcr.io/thenickfish/docker-ai-sbx:latest .
+
+# Push the image
+docker push ghcr.io/thenickfish/docker-ai-sbx:latest
+
+# Push the kit
+sbx kit push . ghcr.io/thenickfish/docker-ai-sbx-kit:latest
+
+# All-in-one
+docker build -t ghcr.io/thenickfish/docker-ai-sbx:latest . && docker push ghcr.io/thenickfish/docker-ai-sbx:latest && sbx kit push . ghcr.io/thenickfish/docker-ai-sbx-kit:latest
+```
+
+### Local run (without publishing)
 
 The `spec.yaml` kit writes `settings.json` (rtk hooks) and `CLAUDE.md` at sandbox startup,
 after the sandbox initialises — ensuring they aren't overwritten by default sandbox init.
 
 ```bash
-# Export the image to a tar archive
-docker image save sbx:latest -o sbx.tar
-
-# Load it as a sandbox template
-sbx template load sbx.tar
-
-# Run a Claude Code session using the kit (spec.yaml in current directory)
-sbx run claude --template sbx:latest --kit .
-
-# remove previous sbx
-sbx rm claude-sbx
-
-# all-in-one
+# Build, export, load, and run
 docker build -t sbx:latest . && docker image save sbx:latest -o sbx.tar && sbx template load sbx.tar && sbx run claude --template sbx:latest --kit .
+
+# Remove previous sandbox first if needed
+sbx rm claude-sbx
 ```
