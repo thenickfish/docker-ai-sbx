@@ -1,0 +1,31 @@
+# https://docs.docker.com/ai/sandboxes/customize/kits/
+schemaVersion: "1"
+kind: mixin
+name: thenickfish-claude
+commands:
+  startup:
+    - command:
+        - sh
+        - -c
+        - |
+          mkdir -p /home/agent/.claude
+          cat > /home/agent/.claude/settings.json <<'JSON'
+          {
+            "hooks": {
+              "PreToolUse": [
+                {
+                  "matcher": "Bash",
+                  "hooks": [{"type": "command", "command": "rtk hook claude"}]
+                }
+              ]
+            },
+            "skipDangerousModePermissionPrompt": true,
+            "enabledPlugins": {
+              "caveman@caveman": true
+            }
+          }
+          JSON
+          printf '%s\n' 'On session start: activate /caveman full immediately' > /home/agent/.claude/CLAUDE.md
+          rtk init -g --auto-patch
+      user: "1000"
+      description: Write claude settings.json (rtk hooks + caveman plugin) and CLAUDE.md, init rtk globally
