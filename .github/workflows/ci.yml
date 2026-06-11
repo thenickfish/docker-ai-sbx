@@ -66,3 +66,4 @@ jobs:
         run: |
           sbx kit validate .
           sbx kit push . ghcr.io/thenickfish/docker-ai-sbx-kit:latest
+          sbx kit push . ghcr.io/thenickfish/docker-ai-sbx-kit:${{ github.sha }}

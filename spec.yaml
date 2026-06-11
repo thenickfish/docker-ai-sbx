@@ -9,6 +9,7 @@ commands:
         - -c
         - |
           mkdir -p /home/agent/.claude
+          # skipDangerousModePermissionPrompt: intentional — sandbox is an isolated environment
           cat > /home/agent/.claude/settings.json <<'JSON'
           {
             "hooks": {

@@ -1,18 +1,26 @@
 # https://docs.docker.com/ai/sandboxes/customize/templates/#build-a-custom-template
-FROM docker/sandbox-templates:claude-code AS base
+FROM docker/sandbox-templates:claude-code@sha256:72570e76fbb20c9bd8b945efea169fe0f2e0696e80d489125e1206d6d409ee91 AS base
 USER agent
 ENV PATH="/home/agent/.local/bin:${PATH}"
 
+# renovate: datasource=github-releases depName=rtk-ai/rtk
+ARG RTK_VERSION="v0.42.3"
+ARG RTK_COMMIT="de78d70aee86fe6b7b5c2462820a1b6c250d425b"
+
+# renovate: datasource=github-tags depName=JuliusBrussee/caveman
+ARG CAVEMAN_VERSION="v1.8.2"
+ARG CAVEMAN_COMMIT="63a91ecadbf4c4719a4602a5abb00883f9966034"
+
 # install rtk
-RUN curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/tags/v0.42.3/install.sh -o /tmp/rtk-install.sh \
-    && echo "ab22d109f920db7d931ef6aa97d9460d93f41d296981db8446afed96ea9661e5  /tmp/rtk-install.sh" | sha256sum -c \
-    && RTK_VERSION=v0.42.3 sh /tmp/rtk-install.sh \
-    && rm /tmp/rtk-install.sh \
+RUN git clone --depth 1 --branch "${RTK_VERSION}" https://github.com/rtk-ai/rtk /tmp/rtk \
+    && test "$(git -C /tmp/rtk rev-parse HEAD)" = "${RTK_COMMIT}" \
+    && RTK_VERSION=${RTK_VERSION} sh /tmp/rtk/install.sh \
+    && rm -rf /tmp/rtk \
     && rtk init -g --auto-patch
 
-    # install caveman
-RUN git clone --depth 1 --branch v1.8.2 https://github.com/JuliusBrussee/caveman /tmp/caveman \
-    && echo "8ddef49c15f089c26affed3c31d97142c683e1d37a1499ae557281ca09c2712c  /tmp/caveman/install.sh" | sha256sum -c \
+# install caveman
+RUN git clone --depth 1 --branch "${CAVEMAN_VERSION}" https://github.com/JuliusBrussee/caveman /tmp/caveman \
+    && test "$(git -C /tmp/caveman rev-parse HEAD)" = "${CAVEMAN_COMMIT}" \
     && bash /tmp/caveman/install.sh \
     && mkdir -p ~/.claude/skills \
     && cp -r /tmp/caveman/skills/* ~/.claude/skills/ \
