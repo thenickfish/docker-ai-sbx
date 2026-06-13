@@ -46,7 +46,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git clone --filter=blob:none --sparse https://github.com/docker/docker-install.git /tmp/docker-install
-          git -C /tmp/docker-install sparse-checkout set install.sh
+          git -C /tmp/docker-install sparse-checkout set --no-cone install.sh
           # renovate: datasource=git-refs depName=https://github.com/docker/docker-install currentValue=HEAD
           git -C /tmp/docker-install checkout 153e238e1d876160ea4a2a1844ca7f2983bbdd5e
           sudo REPO_ONLY=1 sh /tmp/docker-install/install.sh
