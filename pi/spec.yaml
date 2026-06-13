@@ -1,0 +1,6 @@
+schemaVersion: "1"
+kind: mixin
+name: thenickfish-pi
+network:
+  allowedDomains:
+     - localhost # allow ollama connectivity

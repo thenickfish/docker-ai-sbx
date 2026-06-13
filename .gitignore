@@ -81,4 +81,5 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,windows,visualstudiocode
 
-sbx.tar
+*.tar
+**/node_modules

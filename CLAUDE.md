@@ -25,18 +25,38 @@ To make permanent changes, edit `spec.yaml` — the startup command is the sourc
 
 ## Build & run workflow
 
+### Pi + Ollama (local LLM)
+
+Pi is pre-configured with `OLLAMA_HOST=host.docker.internal:11434`. To use it:
+
+1. **Start Ollama on host**, bound to all interfaces:
+   ```bash
+   OLLAMA_HOST=0.0.0.0 ollama serve
+   ```
+2. Switch models with `/model` inside Pi.
+
+> `pi-ollama` is pre-installed in the image. Network access to `host.docker.internal` is allowed via `pi/spec.yaml` — no manual setup needed.
+
+---
+
 ```bash
-# Run using published artifacts (CI publishes on push to main)
-sbx run claude --template ghcr.io/thenickfish/docker-ai-sbx:latest --kit ghcr.io/thenickfish/docker-ai-sbx-kit:latest
+# Claude — run using published artifacts (CI publishes on push to main)
+sbx run claude --template ghcr.io/thenickfish/docker-ai-sbx-claude:latest --kit ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest
 
-# Build & publish manually (all-in-one, multi-platform)
-docker buildx build --platform linux/amd64,linux/arm64 --push -t ghcr.io/thenickfish/docker-ai-sbx:latest . && sbx kit push . ghcr.io/thenickfish/docker-ai-sbx-kit:latest
+# Pi — run using published artifacts
+sbx run shell --template ghcr.io/thenickfish/docker-ai-sbx-pi:latest --kit ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
 
-# Local run (without publishing)
-docker build -t sbx:latest . && docker image save sbx:latest -o sbx.tar && sbx template load sbx.tar && sbx run claude --template sbx:latest --kit .
+# Build & publish both images (uses docker-bake.hcl)
+docker buildx bake --push && sbx kit push ./claude ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest && sbx kit push ./pi ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
+# Claude — local run (without publishing)
+docker buildx bake claude-local --load && docker image save sbx-claude:latest -o sbx-claude.tar && sbx template load sbx-claude.tar && sbx run claude --template sbx-claude:latest --kit ./claude
 
-# Remove previous sandbox first if needed
+# Pi — local run (without publishing)
+docker buildx bake pi-local --load && docker image save sbx-pi:latest -o sbx-pi.tar && sbx template load sbx-pi.tar && sbx run shell --template sbx-pi:latest --kit ./pi
+
+# Remove previous sandboxes if needed
 sbx rm claude-sbx
+sbx rm shell-sbx
 ```
 
 ## GitHub Actions

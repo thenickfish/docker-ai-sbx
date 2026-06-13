@@ -3,13 +3,10 @@ FROM docker/sandbox-templates:claude-code@sha256:72570e76fbb20c9bd8b945efea169fe
 USER agent
 ENV PATH="/home/agent/.local/bin:${PATH}"
 
-# renovate: datasource=github-releases depName=rtk-ai/rtk
-ARG RTK_VERSION="v0.42.3"
-ARG RTK_COMMIT="de78d70aee86fe6b7b5c2462820a1b6c250d425b"
-
-# renovate: datasource=github-tags depName=JuliusBrussee/caveman
-ARG CAVEMAN_VERSION="v1.8.2"
-ARG CAVEMAN_COMMIT="63a91ecadbf4c4719a4602a5abb00883f9966034"
+ARG RTK_VERSION
+ARG RTK_COMMIT
+ARG CAVEMAN_VERSION
+ARG CAVEMAN_COMMIT
 
 # install rtk
 RUN git clone --depth 1 --branch "${RTK_VERSION}" https://github.com/rtk-ai/rtk /tmp/rtk \
