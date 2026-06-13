@@ -20,13 +20,10 @@ jobs:
       - uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       - name: Test
-        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
-        with:
-          context: .
-          target: test
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          docker buildx bake claude-test \
+            --set "claude-test.cache-from=type=gha" \
+            --set "claude-test.cache-to=type=gha,mode=max"
 
       - name: Login to GHCR
         if: github.event_name == 'push'
@@ -38,16 +35,10 @@ jobs:
 
       - name: Build and push
         if: github.event_name == 'push'
-        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/thenickfish/docker-ai-sbx:latest
-            ghcr.io/thenickfish/docker-ai-sbx:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          GIT_SHA=${{ github.sha }} docker buildx bake --push \
+            --set "*.cache-from=type=gha" \
+            --set "*.cache-to=type=gha,mode=max"
 
       - name: Install sbx
         if: github.event_name == 'push'
@@ -64,6 +55,9 @@ jobs:
       - name: Push kit
         if: github.event_name == 'push'
         run: |
-          sbx kit validate .
-          sbx kit push . ghcr.io/thenickfish/docker-ai-sbx-kit:latest
-          sbx kit push . ghcr.io/thenickfish/docker-ai-sbx-kit:${{ github.sha }}
+          sbx kit validate ./claude
+          sbx kit push ./claude ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest
+          sbx kit push ./claude ghcr.io/thenickfish/docker-ai-sbx-claude-kit:${{ github.sha }}
+          sbx kit validate ./pi
+          sbx kit push ./pi ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
+          sbx kit push ./pi ghcr.io/thenickfish/docker-ai-sbx-pi-kit:${{ github.sha }}
