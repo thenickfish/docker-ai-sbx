@@ -6,14 +6,19 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^docker-bake\\.hcl$"],
+      "managerFilePatterns": [
+        "^docker-bake\\.hcl$"
+      ],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\nvariable \"[A-Z_]+\" \\{ default = \"(?<currentValue>[^\"]+)\" \\}\\nvariable \"[A-Z_]+\" \\{ default = \"(?<currentDigest>[a-f0-9]{40})\" \\}"
       ]
     },
     {
       "customType": "regex",
-      "fileMatch": ["^claude/Dockerfile$", "^pi/Dockerfile$"],
+      "managerFilePatterns": [
+        "^claude/Dockerfile$",
+        "^pi/Dockerfile$"
+      ],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+) tracking=single\\nARG [A-Z_]+=\"(?<currentValue>[^\"]+)\""
       ]
