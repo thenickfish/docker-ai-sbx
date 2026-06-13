@@ -1,0 +1,12 @@
+{
+  "name": "pi-sandbox",
+  "private": true,
+  "dependencies": {
+    "@ollama/pi-web-search": "0.0.5",
+    "pi-ollama": "0.1.5",
+    "pi-powerline-footer": "0.6.1"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "0.76.0"
+  }
+}

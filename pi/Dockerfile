@@ -8,7 +8,7 @@ ARG NODE_VERSION="24.16.0"
 ARG TARGETARCH
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl ca-certificates git fd-find \
+    && apt-get install -y --no-install-recommends curl ca-certificates git fd-find jq ripgrep \
     && ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -22,7 +22,6 @@ RUN ARCH=$(echo "$TARGETARCH" | sed 's/amd64/x64/') \
     && rm "/tmp/${FILENAME}"
 
 USER agent
-RUN echo "ignore-scripts=true" >> /home/agent/.npmrc
 ENV PATH="/home/agent/.local/bin:${PATH}"
 
 ARG RTK_VERSION
@@ -30,40 +29,38 @@ ARG RTK_COMMIT
 ARG CAVEMAN_VERSION
 ARG CAVEMAN_COMMIT
 
-# install rtk
 RUN git clone --depth 1 --branch "${RTK_VERSION}" https://github.com/rtk-ai/rtk /tmp/rtk \
     && test "$(git -C /tmp/rtk rev-parse HEAD)" = "${RTK_COMMIT}" \
     && RTK_VERSION=${RTK_VERSION} sh /tmp/rtk/install.sh \
     && rm -rf /tmp/rtk \
     && rtk init -g --agent pi
 
-# install caveman skills
 RUN git clone --depth 1 --branch "${CAVEMAN_VERSION}" https://github.com/JuliusBrussee/caveman /tmp/caveman \
     && test "$(git -C /tmp/caveman rev-parse HEAD)" = "${CAVEMAN_COMMIT}" \
     && mkdir -p ~/.agents/skills \
     && cp -r /tmp/caveman/skills/* ~/.agents/skills/ \
     && rm -rf /tmp/caveman
 
-# renovate: datasource=npm depName=@earendil-works/pi-coding-agent tracking=single
-ARG PI_VERSION="0.79.1"
-# renovate: datasource=npm depName=pi-ollama tracking=single
-ARG PI_OLLAMA_VERSION="0.1.5"
+COPY --chown=agent:agent package.json /home/agent/pi-pkg/package.json
+COPY --chown=agent:agent settings.json /home/agent/.pi/agent/settings.json
+COPY --chown=agent:agent nebula.json /home/agent/.pi/agent/themes/nebula.json
+COPY --chown=agent:agent AGENTS.md /home/agent/.pi/agent/AGENTS.md
+COPY --chown=agent:agent APPEND_SYSTEM.md /home/agent/.pi/agent/APPEND_SYSTEM.md
 
 RUN mkdir -p "$HOME/.npm-global" \
     && npm config set prefix "$HOME/.npm-global" \
     && npm config set ignore-scripts true \
     && printf '\nexport PATH="$HOME/.npm-global/bin:$PATH"\n' >> ~/.bashrc \
-    && npm install -g "@earendil-works/pi-coding-agent@${PI_VERSION}"
-
-# install pi-ollama extension into Pi's global extensions directory
-RUN mkdir -p "$HOME/.pi/agent/extensions/pi-ollama" \
-    && npm pack "pi-ollama@${PI_OLLAMA_VERSION}" --pack-destination /tmp \
-    && tar -xzf "/tmp/pi-ollama-${PI_OLLAMA_VERSION}.tgz" -C "$HOME/.pi/agent/extensions/pi-ollama" --strip-components=1 \
-    && rm "/tmp/pi-ollama-${PI_OLLAMA_VERSION}.tgz"
+    && PI_VERSION=$(node -p "require('/home/agent/pi-pkg/package.json').devDependencies['@earendil-works/pi-coding-agent']") \
+    && npm install -g "@earendil-works/pi-coding-agent@${PI_VERSION}" \
+    && npm install --prefix /home/agent/pi-pkg --omit=dev \
+    && mkdir -p "$HOME/.pi/agent/extensions" \
+    && cp -r /home/agent/pi-pkg/node_modules/@ollama "$HOME/.pi/agent/extensions/" \
+    && cp -r /home/agent/pi-pkg/node_modules/pi-ollama "$HOME/.pi/agent/extensions/" \
+    && cp -r /home/agent/pi-pkg/node_modules/pi-powerline-footer "$HOME/.pi/agent/extensions/" \
+    && rm -rf /home/agent/pi-pkg
 
 ENV OLLAMA_HOST=host.docker.internal:11434
+ENV CAVEMAN_MODE=full
 
-RUN mkdir -p "$HOME/.pi/agent" \
-    && printf 'On session start: activate /caveman full immediately\n' > "$HOME/.pi/agent/AGENTS.md"
-
-RUN printf '\n# Activate caveman by default\nexport CAVEMAN_MODE=full\n\nif [[ $- == *i* ]] && command -v pi &> /dev/null; then\n    exec pi\nfi\n' >> ~/.bashrc
+RUN printf '\nif [[ $- == *i* ]] && command -v pi &> /dev/null; then\n    exec pi\nfi\n' >> ~/.bashrc
