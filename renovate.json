@@ -7,10 +7,19 @@
     {
       "customType": "regex",
       "managerFilePatterns": [
+        "^\\.github/workflows/ci\\.yml$"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+) currentValue=(?<currentValue>[^\\s]+)\\n\\s+git -C /tmp/docker-install checkout (?<currentDigest>[a-f0-9]{40})"
+      ]
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
         "^docker-bake\\.hcl$"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\nvariable \"[A-Z_]+\" \\{ default = \"(?<currentValue>[^\"]+)\" \\}\\nvariable \"[A-Z_]+\" \\{ default = \"(?<currentDigest>[a-f0-9]{40})\" \\}"
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\nvariable \"[A-Z_]+\" +\\{ default = \"(?<currentValue>[^\"]+)\" \\}\\nvariable \"[A-Z_]+\" +\\{ default = \"(?<currentDigest>[a-f0-9]{40})\" \\}"
       ]
     },
     {

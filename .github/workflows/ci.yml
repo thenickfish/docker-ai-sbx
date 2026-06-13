@@ -40,24 +40,26 @@ jobs:
             --set "*.cache-from=type=gha" \
             --set "*.cache-to=type=gha,mode=max"
 
-      - name: Install sbx
-        if: github.event_name == 'push'
+      - name: Install sbx and validate
         # run: curl -fsSL https://desktop.docker.com/sbx/install.sh | sh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-          echo "3c2c1f7e9a3552b594b51b52d479a6c7ffdfd7e2d02a59845a0dc60ea9e71f45  /tmp/get-docker.sh" | sha256sum -c
-          sudo REPO_ONLY=1 sh /tmp/get-docker.sh
+          git clone --filter=blob:none --sparse https://github.com/docker/docker-install.git /tmp/docker-install
+          git -C /tmp/docker-install sparse-checkout set install.sh
+          # renovate: datasource=git-refs depName=https://github.com/docker/docker-install currentValue=HEAD
+          git -C /tmp/docker-install checkout 153e238e1d876160ea4a2a1844ca7f2983bbdd5e
+          sudo REPO_ONLY=1 sh /tmp/docker-install/install.sh
           sudo apt-get install docker-sbx
           echo "$GH_TOKEN" | sbx secret set --registry ghcr.io --password-stdin
+          sbx kit validate ./claude
+          sbx kit validate ./pi
 
       - name: Push kit
         if: github.event_name == 'push'
         run: |
-          sbx kit validate ./claude
           sbx kit push ./claude ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest
           sbx kit push ./claude ghcr.io/thenickfish/docker-ai-sbx-claude-kit:${{ github.sha }}
-          sbx kit validate ./pi
+          
           sbx kit push ./pi ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
           sbx kit push ./pi ghcr.io/thenickfish/docker-ai-sbx-pi-kit:${{ github.sha }}
