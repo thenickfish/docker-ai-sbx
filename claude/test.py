@@ -12,6 +12,10 @@ class TestImageAssertions(unittest.TestCase):
         r = subprocess.run("rtk --version", shell=True, capture_output=True)
         self.assertEqual(r.returncode, 0)
 
+    def test_devbox_installed(self):
+        r = subprocess.run("devbox version", shell=True, capture_output=True)
+        self.assertEqual(r.returncode, 0)
+
     def test_caveman_skills_present(self):
         skills = list((HOME / ".claude/skills").glob("*caveman*"))
         self.assertGreater(len(skills), 0, "no caveman skills found")
