@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.13.7/.schema/devbox.schema.json",
+  "packages": ["nodejs_24"],
+  "shell": {
+    "scripts": {
+      "renovate-dry-run": [
+        "LOG_LEVEL=debug RENOVATE_PLATFORM=local npx renovate@latest --dry-run=full 2>&1 | tee /tmp/renovate-dry-run.log"
+      ]
+    }
+  }
+}

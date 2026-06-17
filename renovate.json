@@ -6,7 +6,7 @@
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": [
+      "fileMatch": [
         "^\\.github/workflows/ci\\.yml$"
       ],
       "matchStrings": [
@@ -15,7 +15,7 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": [
+      "fileMatch": [
         "^docker-bake\\.hcl$"
       ],
       "matchStrings": [
@@ -24,7 +24,7 @@
     },
     {
       "customType": "regex",
-      "managerFilePatterns": [
+      "fileMatch": [
         "^claude/Dockerfile$",
         "^pi/Dockerfile$"
       ],
