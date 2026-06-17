@@ -41,6 +41,15 @@ RUN git clone --depth 1 --branch "${CAVEMAN_VERSION}" https://github.com/JuliusB
     && cp -r /tmp/caveman/skills/* ~/.agents/skills/ \
     && rm -rf /tmp/caveman
 
+# install devbox
+ARG DEVBOX_VERSION
+RUN FILENAME="devbox_${DEVBOX_VERSION}_linux_${TARGETARCH}.tar.gz" \
+    && curl -fsSL "https://github.com/jetify-com/devbox/releases/download/${DEVBOX_VERSION}/${FILENAME}" -o "/tmp/${FILENAME}" \
+    && curl -fsSL "https://github.com/jetify-com/devbox/releases/download/${DEVBOX_VERSION}/checksums.txt" \
+        | grep "$FILENAME" | (cd /tmp && sha256sum -c) \
+    && tar -xzf "/tmp/${FILENAME}" -C ~/.local/bin devbox \
+    && rm "/tmp/${FILENAME}"
+
 COPY --chown=agent:agent package.json /home/agent/pi-pkg/package.json
 COPY --chown=agent:agent settings.json /home/agent/.pi/agent/settings.json
 COPY --chown=agent:agent nebula.json /home/agent/.pi/agent/themes/nebula.json

@@ -25,6 +25,15 @@
     {
       "customType": "regex",
       "fileMatch": [
+        "^docker-bake\\.hcl$"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+) tracking=single\\nvariable \"[A-Z_]+\" +\\{ default = \"(?<currentValue>[^\"]+)\" \\}"
+      ]
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
         "^claude/Dockerfile$",
         "^pi/Dockerfile$"
       ],

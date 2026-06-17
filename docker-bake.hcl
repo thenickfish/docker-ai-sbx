@@ -9,6 +9,9 @@ variable "RTK_COMMIT"  { default = "de78d70aee86fe6b7b5c2462820a1b6c250d425b" }
 variable "CAVEMAN_VERSION" { default = "v1.8.2" }
 variable "CAVEMAN_COMMIT"  { default = "63a91ecadbf4c4719a4602a5abb00883f9966034" }
 
+# renovate: datasource=github-releases depName=jetify-com/devbox tracking=single
+variable "DEVBOX_VERSION" { default = "0.17.3" }
+
 group "default" {
   targets = ["claude", "pi"]
 }
@@ -20,6 +23,7 @@ target "_common" {
     RTK_COMMIT      = RTK_COMMIT
     CAVEMAN_VERSION = CAVEMAN_VERSION
     CAVEMAN_COMMIT  = CAVEMAN_COMMIT
+    DEVBOX_VERSION  = DEVBOX_VERSION
   }
 }
 

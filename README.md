@@ -2,7 +2,7 @@
 
 [![Continuous Integration](https://github.com/thenickfish/docker-ai-sbx/actions/workflows/ci.yml/badge.svg)](https://github.com/thenickfish/docker-ai-sbx/actions/workflows/ci.yml)
 
-Custom Docker sandbox templates for AI coding agents. Both images include **[rtk](https://github.com/rtk-ai/rtk)** and **[caveman](https://github.com/JuliusBrussee/caveman)**.
+Custom Docker sandbox templates for AI coding agents. Both images include **[rtk](https://github.com/rtk-ai/rtk)**, **[caveman](https://github.com/JuliusBrussee/caveman)**, and **[devbox](https://github.com/jetify-com/devbox)**.
 
 ## Templates
 
