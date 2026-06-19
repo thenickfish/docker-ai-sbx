@@ -2,8 +2,8 @@ variable "REGISTRY" { default = "ghcr.io/thenickfish" }
 variable "GIT_SHA"  { default = "latest" }
 
 # renovate: datasource=github-releases depName=rtk-ai/rtk
-variable "RTK_VERSION" { default = "v0.42.3" }
-variable "RTK_COMMIT"  { default = "de78d70aee86fe6b7b5c2462820a1b6c250d425b" }
+variable "RTK_VERSION" { default = "v0.42.4" }
+variable "RTK_COMMIT"  { default = "8a7dd7e5570d7744d4b6508479a3674fe8c49286" }
 
 # renovate: datasource=github-tags depName=JuliusBrussee/caveman
 variable "CAVEMAN_VERSION" { default = "v1.8.2" }
