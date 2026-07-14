@@ -7,6 +7,6 @@
     "pi-powerline-footer": "0.6.1"
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "0.76.0"
+    "@earendil-works/pi-coding-agent": "0.80.3"
   }
 }
