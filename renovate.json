@@ -3,6 +3,13 @@
   "extends": ["config:recommended"],
   "schedule": ["on the first day of the month"],
   "minimumReleaseAge": "14 days",
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all minor and patch updates",
+      "groupSlug": "all-minor-patch"
+    }
+  ],
   "customManagers": [
     {
       "customType": "regex",
