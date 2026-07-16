@@ -48,7 +48,7 @@ jobs:
           git clone --filter=blob:none --sparse https://github.com/docker/docker-install.git /tmp/docker-install
           git -C /tmp/docker-install sparse-checkout set --no-cone install.sh
           # renovate: datasource=git-refs depName=https://github.com/docker/docker-install currentValue=master
-          git -C /tmp/docker-install checkout 153e238e1d876160ea4a2a1844ca7f2983bbdd5e
+          git -C /tmp/docker-install checkout 02cb80d6c7d24c85a458ae31d166a6c535c7a37a
           sudo REPO_ONLY=1 sh /tmp/docker-install/install.sh
           sudo apt-get install docker-sbx
           echo "$GH_TOKEN" | sbx secret set --registry ghcr.io --password-stdin
