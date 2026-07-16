@@ -33,10 +33,28 @@ RUN FILENAME="devbox_${DEVBOX_VERSION}_linux_${TARGETARCH}.tar.gz" \
     && tar -xzf "/tmp/${FILENAME}" -C ~/.local/bin devbox \
     && rm "/tmp/${FILENAME}"
 
+# install renovate
+ARG RENOVATE_VERSION
+USER root
+RUN npm install -g "renovate@${RENOVATE_VERSION}"
+
+# install docker
+ARG DOCKER_VERSION
+RUN ARCH=$([ "$TARGETARCH" = "amd64" ] && echo "x86_64" || echo "aarch64") \
+    && FILENAME="docker-${DOCKER_VERSION}.tgz" \
+    && curl -fsSL "https://download.docker.com/linux/static/stable/${ARCH}/${FILENAME}" -o "/tmp/${FILENAME}" \
+    && tar -xzf "/tmp/${FILENAME}" --strip-components=1 -C /usr/local/bin \
+    && rm "/tmp/${FILENAME}" \
+    && groupadd --force docker \
+    && usermod -aG docker agent
+USER agent
+
 # test stage — assertions only, not shipped
 FROM base AS test
 COPY ["spec.yaml", "test.py", "./"]
+COPY --from=root --chown=agent:agent AGENTS.md /home/agent/.claude/AGENTS.md
 RUN pip install pyyaml --break-system-packages && python3 test.py
 
 # final image
 FROM base
+COPY --from=root --chown=agent:agent AGENTS.md /home/agent/.claude/AGENTS.md

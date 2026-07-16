@@ -3,6 +3,16 @@
   "packages": ["nodejs_24"],
   "shell": {
     "scripts": {
+      "test": "docker buildx bake claude-test",
+      "build": [
+        "PLATFORMS=linux/amd64,linux/arm64 docker buildx bake --push",
+        "sbx kit push ./claude ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest",
+        "sbx kit push ./pi ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest"
+      ],
+      "build-local": "docker buildx bake claude pi --load",
+      "kit-validate": "sbx kit validate ./claude && sbx kit validate ./pi",
+      "run-claude": "TAG=dev-$(date +%s) && docker buildx bake claude --load --no-cache --set \"claude.tags=ghcr.io/thenickfish/docker-ai-sbx-claude:$TAG\" && docker image save ghcr.io/thenickfish/docker-ai-sbx-claude:$TAG -o sbx-claude.tar && sbx template load sbx-claude.tar && sbx run claude --template ghcr.io/thenickfish/docker-ai-sbx-claude:$TAG --kit ./claude",
+      "run-pi": "TAG=dev-$(date +%s) && docker buildx bake pi --load --no-cache --set \"pi.tags=ghcr.io/thenickfish/docker-ai-sbx-pi:$TAG\" && docker image save ghcr.io/thenickfish/docker-ai-sbx-pi:$TAG -o sbx-pi.tar && sbx template load sbx-pi.tar && sbx run shell --template ghcr.io/thenickfish/docker-ai-sbx-pi:$TAG --kit ./pi",
       "renovate-dry-run": [
         "LOG_LEVEL=debug RENOVATE_PLATFORM=local npx renovate@latest --dry-run=full 2>&1 | tee /tmp/renovate-dry-run.log"
       ]

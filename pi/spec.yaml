@@ -3,4 +3,5 @@ kind: mixin
 name: thenickfish-pi
 network:
   allowedDomains:
-     - localhost # allow ollama connectivity
+    - localhost # allow ollama connectivity
+    - search.devbox.sh

@@ -21,7 +21,7 @@ jobs:
 
       - name: Test
         run: |
-          docker buildx bake claude-test \
+          PLATFORMS=linux/amd64,linux/arm64 docker buildx bake claude-test \
             --set "claude-test.cache-from=type=gha" \
             --set "claude-test.cache-to=type=gha,mode=max"
 
@@ -36,7 +36,7 @@ jobs:
       - name: Build and push
         if: github.event_name == 'push'
         run: |
-          GIT_SHA=${{ github.sha }} docker buildx bake --push \
+          PLATFORMS=linux/amd64,linux/arm64 GIT_SHA=${{ github.sha }} docker buildx bake --push \
             --set "*.cache-from=type=gha" \
             --set "*.cache-to=type=gha,mode=max"
 

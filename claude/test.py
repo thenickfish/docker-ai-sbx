@@ -4,7 +4,7 @@ from pathlib import Path
 
 HOME = Path.home()
 SETTINGS = HOME / ".claude/settings.json"
-CLAUDE_MD = HOME / ".claude/CLAUDE.md"
+AGENTS_MD = HOME / ".claude/AGENTS.md"
 
 
 class TestImageAssertions(unittest.TestCase):
@@ -16,12 +16,23 @@ class TestImageAssertions(unittest.TestCase):
         r = subprocess.run("devbox version", shell=True, capture_output=True)
         self.assertEqual(r.returncode, 0)
 
+    def test_renovate_installed(self):
+        r = subprocess.run("renovate --version", shell=True, capture_output=True)
+        self.assertEqual(r.returncode, 0)
+
+    def test_docker_cli_installed(self):
+        r = subprocess.run("docker --version", shell=True, capture_output=True)
+        self.assertEqual(r.returncode, 0)
+
     def test_caveman_skills_present(self):
         skills = list((HOME / ".claude/skills").glob("*caveman*"))
         self.assertGreater(len(skills), 0, "no caveman skills found")
 
     def test_caveman_plugin_registered(self):
         self.assertTrue((HOME / ".claude/plugins/cache/caveman").exists())
+
+    def test_agents_md_caveman_line(self):
+        self.assertIn("activate /caveman full immediately", AGENTS_MD.read_text())
 
 
 class TestSpecYamlStartup(unittest.TestCase):
@@ -49,9 +60,6 @@ class TestSpecYamlStartup(unittest.TestCase):
 
     def test_caveman_plugin_enabled(self):
         self.assertTrue(self.settings.get("enabledPlugins", {}).get("caveman@caveman"))
-
-    def test_claude_md_caveman_line(self):
-        self.assertIn("activate /caveman full immediately", CLAUDE_MD.read_text())
 
 
 if __name__ == "__main__":

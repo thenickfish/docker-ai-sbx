@@ -2,8 +2,22 @@
 schemaVersion: "1"
 kind: mixin
 name: thenickfish-claude
+network:
+  allowedDomains:
+    - search.devbox.sh
 commands:
   startup:
+    - command:
+        - sh
+        - -c
+        - |
+          dockerd --host=unix:///var/run/docker.sock \
+                  --log-level=error \
+                  --iptables=false \
+                  --bridge=none \
+                  > /tmp/dockerd.log 2>&1 &
+      user: "0"
+      description: Start Docker daemon
     - command:
         - sh
         - -c
@@ -26,7 +40,6 @@ commands:
             }
           }
           JSON
-          printf '%s\n' 'On session start: activate /caveman full immediately' > /home/agent/.claude/CLAUDE.md
           rtk init -g --auto-patch
       user: "1000"
-      description: Write claude settings.json (rtk hooks + caveman plugin) and CLAUDE.md, init rtk globally
+      description: Write claude settings.json (rtk hooks + caveman plugin), init rtk globally

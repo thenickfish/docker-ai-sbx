@@ -1,5 +1,6 @@
-variable "REGISTRY" { default = "ghcr.io/thenickfish" }
-variable "GIT_SHA"  { default = "latest" }
+variable "REGISTRY"  { default = "ghcr.io/thenickfish" }
+variable "GIT_SHA"   { default = "latest" }
+variable "PLATFORMS" { default = "" }
 
 # renovate: datasource=github-releases depName=rtk-ai/rtk
 variable "RTK_VERSION" { default = "v0.42.4" }
@@ -12,18 +13,29 @@ variable "CAVEMAN_COMMIT"  { default = "63a91ecadbf4c4719a4602a5abb00883f9966034
 # renovate: datasource=github-releases depName=jetify-com/devbox tracking=single
 variable "DEVBOX_VERSION" { default = "0.17.3" }
 
+# renovate: datasource=npm depName=renovate tracking=single
+variable "RENOVATE_VERSION" { default = "43.236.0" }
+
+# renovate: datasource=github-releases depName=docker/docker-ce tracking=single
+variable "DOCKER_VERSION" { default = "29.6.0" }
+
 group "default" {
   targets = ["claude", "pi"]
 }
 
 target "_common" {
-  platforms = ["linux/amd64", "linux/arm64"]
+  platforms = PLATFORMS != "" ? split(",", PLATFORMS) : []
+  contexts = {
+    root = "."
+  }
   args = {
-    RTK_VERSION     = RTK_VERSION
-    RTK_COMMIT      = RTK_COMMIT
-    CAVEMAN_VERSION = CAVEMAN_VERSION
-    CAVEMAN_COMMIT  = CAVEMAN_COMMIT
-    DEVBOX_VERSION  = DEVBOX_VERSION
+    RTK_VERSION      = RTK_VERSION
+    RTK_COMMIT       = RTK_COMMIT
+    CAVEMAN_VERSION  = CAVEMAN_VERSION
+    CAVEMAN_COMMIT   = CAVEMAN_COMMIT
+    DEVBOX_VERSION   = DEVBOX_VERSION
+    RENOVATE_VERSION = RENOVATE_VERSION
+    DOCKER_VERSION   = DOCKER_VERSION
   }
 }
 
@@ -50,16 +62,4 @@ target "pi" {
     "${REGISTRY}/docker-ai-sbx-pi:latest",
     "${REGISTRY}/docker-ai-sbx-pi:${GIT_SHA}",
   ]
-}
-
-target "claude-local" {
-  inherits  = ["claude"]
-  platforms = []
-  tags      = ["sbx-claude:latest"]
-}
-
-target "pi-local" {
-  inherits  = ["pi"]
-  platforms = []
-  tags      = ["sbx-pi:latest"]
 }

@@ -6,6 +6,9 @@ Extends `docker/sandbox-templates:shell` with:
 - **[caveman](https://github.com/JuliusBrussee/caveman)** — ultra-compressed communication skill, auto-activates on session start
 - **[Pi](https://pi.dev)** — minimal, extensible agent harness supporting 15+ LLM providers, launches automatically
 - **[pi-ollama](https://github.com/CaptCanadaMan/pi-ollama)** — native Ollama provider, pre-installed
+- **[devbox](https://github.com/jetify-com/devbox)** — reproducible dev environments
+- **[renovate](https://github.com/renovatebot/renovate)** — automated dependency updates
+- **[docker](https://www.docker.com)** — Docker CLI + daemon binaries
 
 ## Usage
 
@@ -43,7 +46,7 @@ The sandbox connects to Ollama running on your host machine.
 ## Local build & run
 
 ```bash
-docker buildx bake pi-local --load && docker image save sbx-pi:latest -o sbx-pi.tar && sbx template load sbx-pi.tar && sbx run shell --template sbx-pi:latest --kit ./pi
+docker buildx bake pi --load && docker image save ghcr.io/thenickfish/docker-ai-sbx-pi:latest -o sbx-pi.tar && sbx template load sbx-pi.tar && sbx run shell --template ghcr.io/thenickfish/docker-ai-sbx-pi:latest --kit ./pi
 ```
 
 Remove sandbox: `sbx rm shell-sbx`

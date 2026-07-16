@@ -1,8 +1,12 @@
 # sbx — Claude Code Sandbox
 
-Two Docker sandbox images with similar tools (rtk and caveman) pre-installed:
+Two Docker sandbox images with similar tools (rtk, caveman, renovate) pre-installed:
 - **claude** — Claude Code agent (`docker/sandbox-templates:claude-code` base)
 - **pi** — Pi coding agent (`docker/sandbox-templates:shell` base, Node 24, Pi CLI auto-starts)
+
+## Meta: You Are Likely Running Inside This Sandbox
+
+If you are a Claude Code agent reading this, you are probably running inside a sandbox built from this repository. If you encounter a missing tool, broken behavior, or want to suggest an improvement to the sandbox environment itself, you can propose changes to the source files in this repo (`claude/Dockerfile`, `pi/Dockerfile`, `AGENTS.md`, `claude/spec.yaml`, etc.). Changes take effect after the image is rebuilt and the sandbox is restarted.
 
 ## Adding Tools
 
@@ -28,7 +32,8 @@ When `sbx run` is called: template image is pulled, then the kit's `startup` com
 ### What the claude startup command writes
 
 - `settings.json` — rtk `PreToolUse` hook, `skipDangerousModePermissionPrompt: true`, caveman plugin enabled
-- `CLAUDE.md` — `On session start: activate /caveman full immediately`
+
+`AGENTS.md` (caveman activation) is baked into the image — spec.yaml no longer writes it.
 
 ## Pi agent config
 
@@ -98,18 +103,22 @@ Lookup: `git ls-remote https://github.com/actions/checkout` or the releases page
 ## Build & run commands
 
 ```bash
+# Test (mirrors CI)
+devbox run test
+
 # Build & push both images + kits (requires GHCR login)
-docker buildx bake --push && \
-  sbx kit push ./claude ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest && \
-  sbx kit push ./pi    ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
+devbox run build
+
+# Validate kits
+devbox run kit-validate
 
 # Run from published artifacts (CI pushes on merge to main)
 sbx run claude --template ghcr.io/thenickfish/docker-ai-sbx-claude:latest --kit ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest
 sbx run shell  --template ghcr.io/thenickfish/docker-ai-sbx-pi:latest    --kit ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
 
-# Local build (no push)
-docker buildx bake claude-local --load && docker image save sbx-claude:latest -o sbx-claude.tar && sbx template load sbx-claude.tar && sbx run claude --template sbx-claude:latest --kit ./claude
-docker buildx bake pi-local     --load && docker image save sbx-pi:latest    -o sbx-pi.tar    && sbx template load sbx-pi.tar    && sbx run shell  --template sbx-pi:latest    --kit ./pi
+# Local build + run
+devbox run run-claude
+devbox run run-pi
 
 # Cleanup
 sbx rm claude-sbx
@@ -118,15 +127,15 @@ sbx rm shell-sbx
 
 ## Testing
 
-`claude/test.py` runs inside the Docker build. CI uses `claude-test` (multi-platform). Run locally with the single-platform target:
+`claude/test.py` runs inside the Docker build. CI uses `claude-test` (multi-platform). Run locally:
 
 ```bash
-docker buildx bake claude-test-local
+devbox run test
 ```
 
-`test.py` asserts: rtk installed, devbox installed, caveman skills/plugin present, spec.yaml startup produces correct `settings.json` and `CLAUDE.md`.
+`test.py` asserts: rtk installed, devbox installed, renovate installed, caveman skills/plugin present, AGENTS.md has caveman line, spec.yaml startup produces correct `settings.json`.
 
-> This sandbox has no Docker daemon — tests must be run on the host.
+> Tests run inside the Docker build — `docker ps` won't work there (no daemon during build), but works in a running sandbox.
 
 ## rtk usage
 
