@@ -1,5 +1,5 @@
 # https://docs.docker.com/ai/sandboxes/customize/templates/#build-a-custom-template
-FROM docker/sandbox-templates:shell@sha256:bc721fe1cfddfb234bec0f11c068a38e049cf517e0e278f932b9e241088362f0
+FROM docker/sandbox-templates:shell@sha256:bd90847e98720dde718fe95b24bd4c7d9d4de41966339eb8bf3ab2bb683259e5
 
 USER root
 
