@@ -3,10 +3,10 @@
   "private": true,
   "dependencies": {
     "@ollama/pi-web-search": "0.0.5",
-    "pi-ollama": "0.1.5",
-    "pi-powerline-footer": "0.6.1"
+    "pi-ollama": "0.1.7",
+    "pi-powerline-footer": "0.15.1"
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "0.76.0"
+    "@earendil-works/pi-coding-agent": "0.84.2"
   }
 }
