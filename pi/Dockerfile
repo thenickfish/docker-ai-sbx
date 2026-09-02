@@ -4,7 +4,7 @@ FROM docker/sandbox-templates:shell@sha256:bd90847e98720dde718fe95b24bd4c7d9d4de
 USER root
 
 # renovate: datasource=node depName=node tracking=single
-ARG NODE_VERSION="24.16.0"
+ARG NODE_VERSION="24.19.0"
 ARG TARGETARCH
 
 RUN apt-get update \
