@@ -6,8 +6,8 @@ variable "RTK_VERSION" { default = "v0.42.4" }
 variable "RTK_COMMIT"  { default = "8a7dd7e5570d7744d4b6508479a3674fe8c49286" }
 
 # renovate: datasource=github-tags depName=JuliusBrussee/caveman
-variable "CAVEMAN_VERSION" { default = "v1.8.2" }
-variable "CAVEMAN_COMMIT"  { default = "63a91ecadbf4c4719a4602a5abb00883f9966034" }
+variable "CAVEMAN_VERSION" { default = "v2.2.0" }
+variable "CAVEMAN_COMMIT"  { default = "9aa63945a349bef17206540650db48c30fafbdf2" }
 
 # renovate: datasource=github-releases depName=jetify-com/devbox tracking=single
 variable "DEVBOX_VERSION" { default = "0.17.3" }
