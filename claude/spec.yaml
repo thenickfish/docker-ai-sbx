@@ -31,59 +31,10 @@ commands:
             },
             "statusLine": {
               "type": "command",
-              "command": "/home/agent/.claude/statusline.sh",
-              "padding": 0
+              "command": "/home/agent/.claude/statusline/statusline.sh"
             }
           }
           JSON
-          cat > /home/agent/.claude/statusline.sh <<'SH'
-          #!/bin/bash
-          input=$(cat)
-
-          model=$(echo "$input" | jq -r '.model.display_name')
-          dir=$(echo "$input" | jq -r '.workspace.current_dir')
-          dir_name=$(basename "$dir")
-
-          branch=""
-          if git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-            b=$(git -C "$dir" branch --show-current 2>/dev/null)
-            if [ -n "$b" ]; then
-              dirty=""
-              [ -n "$(git -C "$dir" status --porcelain 2>/dev/null)" ] && dirty="*"
-              branch=" ($b$dirty)"
-            fi
-          fi
-
-          cost=$(echo "$input" | jq -r '.cost.total_cost_usd // empty')
-          cost_str=""
-          [ -n "$cost" ] && cost_str=$(awk -v c="$cost" 'BEGIN{printf " $%.4f", c}')
-
-          # Context-window usage % isn't in the stdin payload — read it off
-          # the last transcript line that carries a usage block. Claude Code
-          # resends the full transcript each turn, so "how full is my
-          # context" is that turn's *input*-side total (input + cache write
-          # + cache read); output_tokens is new text from this turn, not yet
-          # part of next turn's input. `tail -c` bounds the read to the tail
-          # of a (possibly huge) transcript for speed, and the following
-          # `tail -n +2` drops whatever partial line that byte cut lands in,
-          # so jq only ever sees whole JSON lines.
-          transcript=$(echo "$input" | jq -r '.transcript_path // empty')
-          context_str=""
-          if [ -n "$transcript" ] && [ -f "$transcript" ]; then
-            ctx=$(tail -c 50000 "$transcript" 2>/dev/null | tail -n +2 | jq -rs '
-              map(select(.message.usage != null) | .message.usage) | last |
-              if . then ((.input_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0)) else empty end
-            ' 2>/dev/null)
-            if [ -n "$ctx" ] && [ "$ctx" != "null" ]; then
-              # 200k is Claude Code's standard context window; hardcoded
-              # since the statusline payload doesn't expose the active limit.
-              context_str=$(awk -v n="$ctx" 'BEGIN{printf " %.0f%% ctx", (n/200000)*100}')
-            fi
-          fi
-
-          printf '\033[2m[%s]\033[0m %s%s%s%s\n' "$model" "$dir_name" "$branch" "$cost_str" "$context_str"
-          SH
-          chmod +x /home/agent/.claude/statusline.sh
           cat > /home/agent/.claude/CLAUDE.md <<'MD'
           On session start: activate /caveman full immediately
 

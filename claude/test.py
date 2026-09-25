@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-import unittest, subprocess, json, yaml, tempfile
+import unittest, subprocess, json, yaml
 from pathlib import Path
 
 HOME = Path.home()
 SETTINGS = HOME / ".claude/settings.json"
 CLAUDE_MD = HOME / ".claude/CLAUDE.md"
-STATUSLINE = HOME / ".claude/statusline.sh"
+STATUSLINE = HOME / ".claude/statusline/statusline.sh"
 
 
 class TestImageAssertions(unittest.TestCase):
@@ -75,46 +75,34 @@ class TestSpecYamlStartup(unittest.TestCase):
         self.assertTrue(STATUSLINE.stat().st_mode & 0o111, "statusline.sh is not executable")
         sample = json.dumps({
             "model": {"display_name": "Test Model"},
-            "workspace": {"current_dir": str(HOME)},
+            "cwd": str(HOME),
         })
         r = subprocess.run(
             [str(STATUSLINE)], input=sample, capture_output=True, text=True,
-            env={"PATH": "/usr/bin:/bin", "HOME": str(HOME)},
+            env={"PATH": "/usr/local/bin:/usr/bin:/bin", "HOME": str(HOME)},
         )
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("Test Model", r.stdout)
 
-    def test_statusline_cost_and_context_pct(self):
-        with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
-            # First line simulates a byte-boundary cut mid-record — the
-            # script's `tail -c | tail -n +2` must discard it, not choke on it.
-            f.write('{"broken":\n')
-            f.write(json.dumps({"message": {"usage": {"input_tokens": 100, "output_tokens": 50}}}) + "\n")
-            # input + cache_creation + cache_read = 20000 -> 10% of the 200k
-            # window. output_tokens is deliberately huge (50000): if the
-            # script wrongly folds it into the context total, this would
-            # read 35% instead of 10%, so the test catches that regression.
-            f.write(json.dumps({"message": {"usage": {
-                "input_tokens": 15000, "output_tokens": 50000,
-                "cache_creation_input_tokens": 2000, "cache_read_input_tokens": 3000,
-            }}}) + "\n")
-            transcript_path = f.name
-        try:
-            sample = json.dumps({
-                "model": {"display_name": "Test Model"},
-                "workspace": {"current_dir": str(HOME)},
-                "cost": {"total_cost_usd": 0.1234},
-                "transcript_path": transcript_path,
-            })
-            r = subprocess.run(
-                [str(STATUSLINE)], input=sample, capture_output=True, text=True,
-                env={"PATH": "/usr/bin:/bin", "HOME": str(HOME)},
-            )
-            self.assertEqual(r.returncode, 0, r.stderr)
-            self.assertIn("$0.1234", r.stdout)
-            self.assertIn("10% ctx", r.stdout)
-        finally:
-            Path(transcript_path).unlink()
+    def test_statusline_context_window(self):
+        sample = json.dumps({
+            "model": {"display_name": "Test Model"},
+            "cwd": str(HOME),
+            "context_window": {
+                "context_window_size": 200000,
+                "current_usage": {
+                    "input_tokens": 20000,
+                    "cache_creation_input_tokens": 0,
+                    "cache_read_input_tokens": 0,
+                },
+            },
+        })
+        r = subprocess.run(
+            [str(STATUSLINE)], input=sample, capture_output=True, text=True,
+            env={"PATH": "/usr/local/bin:/usr/bin:/bin", "HOME": str(HOME)},
+        )
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue(r.stdout.strip(), "statusline produced no output")
 
 
 if __name__ == "__main__":

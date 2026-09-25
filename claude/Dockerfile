@@ -7,6 +7,8 @@ ARG RTK_VERSION
 ARG RTK_COMMIT
 ARG CAVEMAN_VERSION
 ARG CAVEMAN_COMMIT
+ARG STATUSLINE_VERSION
+ARG STATUSLINE_COMMIT
 
 # install rtk
 RUN git clone --depth 1 --branch "${RTK_VERSION}" https://github.com/rtk-ai/rtk /tmp/rtk \
@@ -22,6 +24,14 @@ RUN git clone --depth 1 --branch "${CAVEMAN_VERSION}" https://github.com/JuliusB
     && mkdir -p ~/.claude/skills \
     && cp -r /tmp/caveman/skills/* ~/.claude/skills/ \
     && rm -rf /tmp/caveman
+
+# install statusline
+RUN git clone --depth 1 --branch "${STATUSLINE_VERSION}" https://github.com/daniel3303/ClaudeCodeStatusLine /tmp/statusline \
+    && test "$(git -C /tmp/statusline rev-parse HEAD)" = "${STATUSLINE_COMMIT}" \
+    && mkdir -p ~/.claude/statusline \
+    && cp /tmp/statusline/statusline.sh ~/.claude/statusline/statusline.sh \
+    && chmod +x ~/.claude/statusline/statusline.sh \
+    && rm -rf /tmp/statusline
 
 # install devbox
 ARG DEVBOX_VERSION
