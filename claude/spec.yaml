@@ -44,5 +44,10 @@ commands:
           - The workspace is bind-mounted from the host, but the sandbox is a different OS/architecture than the host may be (e.g. Linux sandbox, macOS/ARM host). Don't run commands that write platform-specific build artifacts into the shared workspace (`terraform init` providers, `node_modules` with native addons, compiled binaries, venvs) without flagging it first — they'll be built for the sandbox's platform and can silently break when the host later reuses that same directory.
           MD
           rtk init -g --auto-patch
+          # GH_TOKEN is set to a proxy-managed sentinel by the sbx platform.
+          # It intercepts git HTTPS ops at the MITM layer (unaffected by this unset).
+          # Unsetting it lets gh CLI fall back to GITHUB_TOKEN, which is injected
+          # via `sbx secret set-custom --host api.github.com --env GITHUB_TOKEN`.
+          echo 'unset GH_TOKEN' >> /etc/sandbox-persistent.sh
       user: "1000"
       description: Write claude settings.json (rtk hooks + caveman plugin) and CLAUDE.md, init rtk globally

@@ -29,6 +29,22 @@ claude() {
 }
 ```
 
+## GitHub API access (gh CLI)
+
+The sandbox proxy manages git HTTPS credentials automatically. For `gh` CLI API access (issues, PRs, etc.), set up a readonly fine-grained PAT once on the host:
+
+```bash
+# Create a fine-grained PAT at https://github.com/settings/personal-access-tokens/new
+# Scopes: Contents (read), Metadata (read), Pull requests (read), Issues (read)
+sbx secret set-custom \
+  --host api.github.com \
+  --env GITHUB_TOKEN \
+  --placeholder "github_pat_{rand}" \
+  --value "<your-readonly-PAT>"
+```
+
+The startup script unsets the proxy's `GH_TOKEN` sentinel so `gh` falls back to `GITHUB_TOKEN`. The proxy then substitutes the real token on outbound requests to `api.github.com`. Git push/fetch continue to work via the built-in `github` service secret.
+
 ## Local build & run
 
 ```bash

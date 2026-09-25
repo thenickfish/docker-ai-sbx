@@ -128,6 +128,26 @@ docker buildx bake claude-test-local
 
 > This sandbox has no Docker daemon — tests must be run on the host.
 
+## GitHub API access (gh CLI)
+
+The proxy handles git HTTPS credentials automatically. For `gh` CLI API calls, a separate one-time setup is required on the host.
+
+The startup script in `claude/spec.yaml` unsets the proxy's `GH_TOKEN` sentinel so `gh` falls back to `GITHUB_TOKEN`. The proxy then substitutes the real token on outbound `api.github.com` requests.
+
+**One-time host setup:**
+
+```bash
+# Create a fine-grained PAT at https://github.com/settings/personal-access-tokens/new
+# Scopes: Contents (read), Metadata (read), Pull requests (read), Issues (read)
+sbx secret set-custom \
+  --host api.github.com \
+  --env GITHUB_TOKEN \
+  --placeholder "github_pat_{rand}" \
+  --value "<your-readonly-PAT>"
+```
+
+Git push/fetch continue to work via the built-in `github` service secret.
+
 ## rtk usage
 
 ```bash
