@@ -2,15 +2,15 @@ variable "REGISTRY" { default = "ghcr.io/thenickfish" }
 variable "GIT_SHA"  { default = "latest" }
 
 # renovate: datasource=github-releases depName=rtk-ai/rtk
-variable "RTK_VERSION" { default = "v0.48.0" }
-variable "RTK_COMMIT"  { default = "fde0a8f185945556f51718de0f4c430bb62b3df6" }
+variable "RTK_VERSION" { default = "v0.49.0" }
+variable "RTK_COMMIT"  { default = "b1c0dc00649c50fbe8930f849c800d4d6ca12091" }
 
 # renovate: datasource=github-tags depName=JuliusBrussee/caveman
-variable "CAVEMAN_VERSION" { default = "v2.6.0" }
-variable "CAVEMAN_COMMIT"  { default = "b82c0ad42c2bedc1f2cd78e414dadfaffbaaeec3" }
+variable "CAVEMAN_VERSION" { default = "v2.7.0" }
+variable "CAVEMAN_COMMIT"  { default = "8b0c1d3699b8d83e87fe4605b378da20c41555e0" }
 
 # renovate: datasource=github-releases depName=jetify-com/devbox tracking=single
-variable "DEVBOX_VERSION" { default = "0.18.0" }
+variable "DEVBOX_VERSION" { default = "0.18.3" }
 
 # renovate: datasource=github-releases depName=daniel3303/ClaudeCodeStatusLine
 variable "STATUSLINE_VERSION" { default = "v1.4.4" }
