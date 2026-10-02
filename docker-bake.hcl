@@ -12,6 +12,9 @@ variable "CAVEMAN_COMMIT"  { default = "b82c0ad42c2bedc1f2cd78e414dadfaffbaaeec3
 # renovate: datasource=github-releases depName=jetify-com/devbox tracking=single
 variable "DEVBOX_VERSION" { default = "0.18.0" }
 
+# renovate: datasource=docker depName=1password/op
+variable "OP_VERSION" { default = "2.39.0" }
+
 # renovate: datasource=github-releases depName=daniel3303/ClaudeCodeStatusLine
 variable "STATUSLINE_VERSION" { default = "v1.4.4" }
 variable "STATUSLINE_COMMIT"  { default = "5da96959df726707fe8ff41c5645b4f7b8c7eac9" }
@@ -28,6 +31,7 @@ target "_common" {
     CAVEMAN_VERSION    = CAVEMAN_VERSION
     CAVEMAN_COMMIT     = CAVEMAN_COMMIT
     DEVBOX_VERSION     = DEVBOX_VERSION
+    OP_VERSION         = OP_VERSION
     STATUSLINE_VERSION = STATUSLINE_VERSION
     STATUSLINE_COMMIT  = STATUSLINE_COMMIT
   }

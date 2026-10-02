@@ -2,6 +2,9 @@ On session start: activate /caveman full immediately
 
 ## Sandbox constraints
 
+### Platform
+This session runs inside an isolated Docker sandbox (Linux), not the user's host machine. The workspace is bind-mounted from the host, but the sandbox may be a different OS/architecture (e.g. Linux sandbox, macOS/ARM host). Don't run commands that write platform-specific build artifacts into the shared workspace (`terraform init` providers, `node_modules` with native addons, compiled binaries, venvs) without flagging it first — they'll be built for the sandbox's platform and can silently break when the host later reuses that same directory.
+
 ### Network access
 Outbound network is restricted to an allowlist. Blocked requests return HTTP 403.
 

@@ -17,18 +17,25 @@ When adding new tools, do the following:
 - **Template** — the Docker image (built via `docker-bake.hcl`, pushed to GHCR)
 - **Kit** — the mixin overlay: `spec.yaml` + any config assets (no image build). Pushed separately via `sbx kit push`. Runs at sandbox start.
 
-When `sbx run` is called: template image is pulled, then the kit's `startup` commands execute on top.
+When `sbx run` is called: template image is pulled, then the kit's static files and startup commands execute on top.
 
-## Critical: spec.yaml is source of truth for sandbox config
+## Critical: spec.yaml and files/ are source of truth for sandbox config
 
-`spec.yaml` startup commands overwrite `/home/agent/.claude/settings.json` and `/home/agent/.claude/CLAUDE.md` **on every sandbox start**. Never edit those files directly inside a running sandbox — changes are lost on restart.
+Both kits use `schemaVersion: "2"`. Never edit kit-managed files directly inside a running sandbox — they are overwritten on recreation.
 
-**To change sandbox behavior: edit `spec.yaml`**, not the sandbox files.
+**To change sandbox behavior: edit `spec.yaml` or files under `claude/files/`**, not the sandbox files.
 
-### What the claude startup command writes
+### What the claude kit writes
 
-- `settings.json` — rtk `PreToolUse` hook, `skipDangerousModePermissionPrompt: true`, caveman plugin enabled
-- `CLAUDE.md` — `On session start: activate /caveman full immediately`
+Static files (applied once at kit composition via `files/home/`):
+- `~/.claude/settings.json` — rtk `PreToolUse` hook, `skipDangerousModePermissionPrompt: true`, caveman plugin enabled
+- `~/.claude/CLAUDE.md` — sandbox instructions (caveman, network policy, devbox guidance, op CLI)
+
+One-time install (`setup.install`, runs as root):
+- Appends `unset GH_TOKEN` to `/etc/sandbox-persistent.sh`
+
+Every-start startup (`setup.startup`, runs as agent):
+- `rtk init -g --auto-patch`
 
 ## Pi agent config
 
