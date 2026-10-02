@@ -1,6 +1,8 @@
-schemaVersion: "1"
+# https://docs.docker.com/ai/sandboxes/customize/kits/
+schemaVersion: "2"
 kind: mixin
 name: thenickfish-pi
-network:
-  allowedDomains:
-     - localhost # allow ollama connectivity
+permissions:
+  network:
+    allow:
+      - localhost # allow ollama connectivity

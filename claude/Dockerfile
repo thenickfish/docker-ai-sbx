@@ -43,9 +43,22 @@ RUN FILENAME="devbox_${DEVBOX_VERSION}_linux_${TARGETARCH}.tar.gz" \
     && tar -xzf "/tmp/${FILENAME}" -C ~/.local/bin devbox \
     && rm "/tmp/${FILENAME}"
 
+# install op CLI (1Password) — unauthenticated; available for command exploration
+ARG OP_VERSION
+RUN FILENAME="op_linux_${TARGETARCH}_v${OP_VERSION}.zip" \
+    && curl -fsSL "https://cache.agilebits.com/dist/1P/op2/pkg/v${OP_VERSION}/${FILENAME}" -o "/tmp/${FILENAME}" \
+    && curl -fsSL "https://raw.githubusercontent.com/1Password/install-cli-action/main/src/op-cli-installer/github-action/cli-installer/linux-signing-key.asc" | gpg --import \
+    && mkdir /tmp/op_extract \
+    && python3 -c "import zipfile; z=zipfile.ZipFile('/tmp/${FILENAME}'); z.extract('op', '/tmp/op_extract'); z.extract('op.sig', '/tmp/op_extract')" \
+    && gpg --verify /tmp/op_extract/op.sig /tmp/op_extract/op \
+    && mv /tmp/op_extract/op ~/.local/bin/op \
+    && chmod +x ~/.local/bin/op \
+    && rm -rf "/tmp/${FILENAME}" /tmp/op_extract
+
 # test stage — assertions only, not shipped
 FROM base AS test
 COPY ["spec.yaml", "test.py", "./"]
+COPY files/ ./files/
 RUN pip install pyyaml --break-system-packages && python3 test.py
 
 # final image

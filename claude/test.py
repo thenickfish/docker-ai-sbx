@@ -4,8 +4,11 @@ from pathlib import Path
 
 HOME = Path.home()
 SETTINGS = HOME / ".claude/settings.json"
-CLAUDE_MD = HOME / ".claude/CLAUDE.md"
 STATUSLINE = HOME / ".claude/statusline/statusline.sh"
+
+FILES_HOME = Path("files/home")
+KIT_SETTINGS = FILES_HOME / ".claude/settings.json"
+KIT_CLAUDE_MD = FILES_HOME / ".claude/CLAUDE.md"
 
 
 class TestImageAssertions(unittest.TestCase):
@@ -17,6 +20,10 @@ class TestImageAssertions(unittest.TestCase):
         r = subprocess.run("devbox version", shell=True, capture_output=True)
         self.assertEqual(r.returncode, 0)
 
+    def test_op_installed(self):
+        r = subprocess.run("op --version", shell=True, capture_output=True)
+        self.assertEqual(r.returncode, 0)
+
     def test_caveman_skills_present(self):
         skills = list((HOME / ".claude/skills").glob("*caveman*"))
         self.assertGreater(len(skills), 0, "no caveman skills found")
@@ -25,21 +32,11 @@ class TestImageAssertions(unittest.TestCase):
         self.assertTrue((HOME / ".claude/plugins/cache/caveman").exists())
 
 
-class TestSpecYamlStartup(unittest.TestCase):
+class TestKitFiles(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with open("spec.yaml") as f:
-            spec = yaml.safe_load(f)
-        # sbx's real startup dispatcher runs with a minimal PATH that
-        # excludes /home/agent/.local/bin — a bare `env=` inheriting the
-        # build shell's PATH would hide that and let a script depending on
-        # e.g. rtk silently pass here while failing 127 in the real sandbox.
-        minimal_env = {"PATH": "/usr/bin:/bin", "HOME": str(HOME)}
-        for entry in spec["commands"]["startup"]:
-            r = subprocess.run(entry["command"], env=minimal_env)
-            if r.returncode != 0:
-                raise RuntimeError(f"startup command failed with exit {r.returncode}")
-        cls.settings = json.loads(SETTINGS.read_text())
+        cls.settings = json.loads(KIT_SETTINGS.read_text())
+        cls.claude_md = KIT_CLAUDE_MD.read_text()
 
     def test_rtk_hook(self):
         pre_tool_hooks = self.settings.get("hooks", {}).get("PreToolUse", [])
@@ -57,18 +54,52 @@ class TestSpecYamlStartup(unittest.TestCase):
         self.assertTrue(self.settings.get("enabledPlugins", {}).get("caveman@caveman"))
 
     def test_claude_md_caveman_line(self):
-        self.assertIn("activate /caveman full immediately", CLAUDE_MD.read_text())
+        self.assertIn("activate /caveman full immediately", self.claude_md)
 
-    def test_claude_md_sandbox_guidance(self):
-        content = CLAUDE_MD.read_text()
-        self.assertIn("isolated Docker sandbox", content)
-        self.assertIn("Network access is restricted", content)
-        self.assertIn("platform-specific build artifacts", content)
+    def test_claude_md_sandbox_constraints(self):
+        self.assertIn("isolated Docker sandbox", self.claude_md)
+        self.assertIn("platform-specific build artifacts", self.claude_md)
+
+    def test_claude_md_network_guidance(self):
+        self.assertIn("Outbound network is restricted", self.claude_md)
+        self.assertIn("stop immediately", self.claude_md)
+        self.assertIn("sbx policy approval ls", self.claude_md)
+
+    def test_claude_md_local_dev_tools_section(self):
+        self.assertIn("## Local dev tools", self.claude_md)
+
+    def test_claude_md_devbox_guidance(self):
+        self.assertIn("devbox", self.claude_md)
+        self.assertIn("devbox add", self.claude_md)
+
+    def test_claude_md_op_guidance(self):
+        self.assertIn("op", self.claude_md)
+        self.assertIn("no authenticated session", self.claude_md)
 
     def test_statusline_configured(self):
         status_line = self.settings.get("statusLine", {})
         self.assertEqual(status_line.get("type"), "command")
         self.assertEqual(status_line.get("command"), str(STATUSLINE))
+
+
+class TestSpecYamlStartup(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        with open("spec.yaml") as f:
+            cls.spec = yaml.safe_load(f)
+        # sbx startup dispatcher runs with a minimal PATH excluding /home/agent/.local/bin
+        minimal_env = {"PATH": "/usr/bin:/bin", "HOME": str(HOME)}
+        for entry in cls.spec["setup"]["startup"]:
+            r = subprocess.run(entry["command"], env=minimal_env)
+            if r.returncode != 0:
+                raise RuntimeError(f"startup command failed with exit {r.returncode}")
+
+    def test_schema_version(self):
+        self.assertEqual(self.spec["schemaVersion"], "2")
+
+    def test_startup_ran(self):
+        # setUpClass ran startup without raising — verified implicitly
+        pass
 
     def test_statusline_script_runs(self):
         self.assertTrue(STATUSLINE.exists())
