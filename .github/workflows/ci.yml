@@ -50,7 +50,9 @@ jobs:
           # renovate: datasource=git-refs depName=https://github.com/docker/docker-install currentValue=master
           git -C /tmp/docker-install checkout 02cb80d6c7d24c85a458ae31d166a6c535c7a37a
           sudo REPO_ONLY=1 sh /tmp/docker-install/install.sh
-          sudo apt-get install docker-sbx
+          sudo apt-get update
+          sudo apt-get install -y docker-sbx
+          sbx version
           echo "$GH_TOKEN" | sbx secret set --registry ghcr.io --password-stdin
           sbx kit validate ./claude
           sbx kit validate ./pi
