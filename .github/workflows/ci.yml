@@ -61,4 +61,4 @@ jobs:
           for ref in latest ${{ github.sha }}; do
             sbx kit push ./claude ghcr.io/thenickfish/docker-ai-sbx-claude-kit:$ref
             sbx kit push ./pi ghcr.io/thenickfish/docker-ai-sbx-pi-kit:$ref
-          done ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
+          done
