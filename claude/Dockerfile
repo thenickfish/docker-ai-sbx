@@ -1,5 +1,5 @@
 # https://docs.docker.com/ai/sandboxes/customize/templates/#build-a-custom-template
-FROM docker/sandbox-templates:claude-code@sha256:bed9d58c654675d3e5c0130c8450d84095b0e227e94a7cda4660d2e4e46033e8 AS base
+FROM docker/sandbox-templates:claude-code@sha256:868e3f5ef10579e06903d42e86448851ed59319ab8b9fba6dea2772c449bb2a6 AS base
 USER agent
 ENV PATH="/home/agent/.local/bin:${PATH}"
 
