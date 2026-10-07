@@ -58,8 +58,7 @@ jobs:
       - name: Push kit
         if: github.event_name == 'push'
         run: |
-          sbx kit push ./claude ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest
-          docker buildx imagetools create -t ghcr.io/thenickfish/docker-ai-sbx-claude-kit:${{ github.sha }} ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest
-
-          sbx kit push ./pi ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
-          docker buildx imagetools create -t ghcr.io/thenickfish/docker-ai-sbx-pi-kit:${{ github.sha }} ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
+          for ref in latest ${{ github.sha }}; do
+            sbx kit push ./claude ghcr.io/thenickfish/docker-ai-sbx-claude-kit:$ref
+            sbx kit push ./pi ghcr.io/thenickfish/docker-ai-sbx-pi-kit:$ref
+          done
