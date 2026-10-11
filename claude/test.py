@@ -82,14 +82,16 @@ class TestKitFiles(unittest.TestCase):
         self.assertEqual(status_line.get("command"), str(STATUSLINE))
 
 
-class TestSpecYamlStartup(unittest.TestCase):
+class TestKitDeployment(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        import shutil
         with open("spec.yaml") as f:
             cls.spec = yaml.safe_load(f)
-        # sbx startup dispatcher runs with a minimal PATH excluding /home/agent/.local/bin
+        # Simulate v2 kit delivery: files/home/ applied before startup commands
+        shutil.copytree("files/home", str(HOME), dirs_exist_ok=True)
         minimal_env = {"PATH": "/usr/bin:/bin", "HOME": str(HOME)}
-        for entry in cls.spec["setup"]["startup"]:
+        for entry in cls.spec["setup"].get("startup", []):
             r = subprocess.run(entry["command"], env=minimal_env)
             if r.returncode != 0:
                 raise RuntimeError(f"startup command failed with exit {r.returncode}")
@@ -97,9 +99,33 @@ class TestSpecYamlStartup(unittest.TestCase):
     def test_schema_version(self):
         self.assertEqual(self.spec["schemaVersion"], "2")
 
-    def test_startup_ran(self):
-        # setUpClass ran startup without raising — verified implicitly
-        pass
+    def test_deployed_rtk_hook(self):
+        settings = json.loads(SETTINGS.read_text())
+        pre_tool_hooks = settings.get("hooks", {}).get("PreToolUse", [])
+        rtk_hook = any(
+            h.get("command") == "rtk hook claude"
+            for entry in pre_tool_hooks
+            for h in entry.get("hooks", [])
+        )
+        self.assertTrue(rtk_hook, "rtk hook missing from deployed settings.json")
+
+    def test_deployed_caveman_plugin(self):
+        settings = json.loads(SETTINGS.read_text())
+        self.assertTrue(
+            settings.get("enabledPlugins", {}).get("caveman@caveman"),
+            "caveman plugin missing from deployed settings.json after startup",
+        )
+
+    def test_deployed_statusline_setting(self):
+        settings = json.loads(SETTINGS.read_text())
+        status_line = settings.get("statusLine", {})
+        self.assertEqual(status_line.get("type"), "command")
+        self.assertEqual(status_line.get("command"), str(STATUSLINE))
+
+    def test_deployed_claude_md(self):
+        claude_md = (HOME / ".claude/CLAUDE.md").read_text()
+        self.assertIn("activate /caveman full immediately", claude_md)
+        self.assertIn("Outbound network is restricted", claude_md)
 
     def test_statusline_script_runs(self):
         self.assertTrue(STATUSLINE.exists())

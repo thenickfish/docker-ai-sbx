@@ -34,9 +34,6 @@ Static files (applied once at kit composition via `files/home/`):
 One-time install (`setup.install`, runs as root):
 - Appends `unset GH_TOKEN` to `/etc/sandbox-persistent.sh`
 
-Every-start startup (`setup.startup`, runs as agent):
-- `rtk init -g --auto-patch`
-
 ## Pi agent config
 
 Pi is a separate coding agent (not Claude Code). It auto-starts in the shell sandbox when an interactive terminal opens.

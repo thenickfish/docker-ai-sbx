@@ -10,13 +10,3 @@ setup:
         Unset GH_TOKEN sentinel so gh CLI falls back to GITHUB_TOKEN injected
         via `sbx secret set-custom --host api.github.com --env GITHUB_TOKEN`.
         The proxy intercepts git HTTPS ops at the MITM layer unaffected by this unset.
-  startup:
-    - command:
-        - sh
-        - -c
-        - |
-          # sbx startup dispatcher runs with a minimal PATH excluding /home/agent/.local/bin
-          export PATH="/home/agent/.local/bin:$PATH"
-          rtk init -g --auto-patch
-      user: "1000"
-      description: Initialize rtk globally
