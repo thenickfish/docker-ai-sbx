@@ -5,6 +5,9 @@
     "scripts": {
       "renovate-dry-run": [
         "LOG_LEVEL=debug RENOVATE_PLATFORM=local npx renovate@latest --dry-run=full 2>&1 | tee /tmp/renovate-dry-run.log"
+      ],
+      "run-claude-local": [
+        "docker buildx bake claude-local --load && docker image save sbx-claude:latest -o /tmp/sbx-claude.tar && sbx template load /tmp/sbx-claude.tar && sbx run claude --template sbx-claude:latest --kit ./claude"
       ]
     }
   }

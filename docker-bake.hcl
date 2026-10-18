@@ -53,6 +53,11 @@ target "claude-test" {
   output   = ["type=cacheonly"]
 }
 
+target "claude-test-local" {
+  inherits  = ["claude-test"]
+  platforms = []
+}
+
 target "pi" {
   inherits = ["_common"]
   context  = "./pi"

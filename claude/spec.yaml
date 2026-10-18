@@ -1,4 +1,4 @@
-# https://docs.docker.com/ai/sandboxes/customize/kits/
+# https://docs.docker.com/ai/sandboxes/customize/kits-v2/
 schemaVersion: "2"
 kind: mixin
 name: thenickfish-claude
@@ -10,3 +10,21 @@ setup:
         Unset GH_TOKEN sentinel so gh CLI falls back to GITHUB_TOKEN injected
         via `sbx secret set-custom --host api.github.com --env GITHUB_TOKEN`.
         The proxy intercepts git HTTPS ops at the MITM layer unaffected by this unset.
+  startup:
+    - command:
+        - sh
+        - -c
+        - |
+          # files/home/ is only applied once, at sandbox creation (v2 kit model),
+          # so it can't self-heal settings.json. Claude Code itself rewrites
+          # settings.json during normal use (theme, bypass-mode accept, etc.)
+          # and that rewrite drops unknown keys. Re-assert our keys every start
+          # via a deep merge so Claude Code's own keys survive.
+          SETTINGS=/home/agent/.claude/settings.json
+          KIT_SETTINGS=/home/agent/.claude/kit-settings.json
+          mkdir -p /home/agent/.claude
+          [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
+          jq -s '.[0] * .[1]' "$SETTINGS" "$KIT_SETTINGS" > "$SETTINGS.tmp" \
+            && mv "$SETTINGS.tmp" "$SETTINGS"
+      user: "1000"
+      description: Re-assert kit-managed settings.json keys (rtk hook, statusLine, caveman plugin) every start

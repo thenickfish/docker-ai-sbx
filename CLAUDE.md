@@ -27,12 +27,15 @@ Both kits use `schemaVersion: "2"`. Never edit kit-managed files directly inside
 
 ### What the claude kit writes
 
-Static files (applied once at kit composition via `files/home/`):
-- `~/.claude/settings.json` — rtk `PreToolUse` hook, `skipDangerousModePermissionPrompt: true`, caveman plugin enabled
+Static files (applied once, at sandbox creation only, via `files/home/`):
+- `~/.claude/kit-settings.json` — rtk `PreToolUse` hook, `skipDangerousModePermissionPrompt: true`, caveman plugin enabled, `statusLine` command. Not read directly by Claude Code — it's the merge source below.
 - `~/.claude/CLAUDE.md` — sandbox instructions (caveman, network policy, devbox guidance, op CLI)
 
-One-time install (`setup.install`, runs as root):
+One-time install (`setup.install`, runs as root, at creation only):
 - Appends `unset GH_TOKEN` to `/etc/sandbox-persistent.sh`
+
+Every-start startup (`setup.startup`, runs as agent, on every sandbox start):
+- Deep-merges `~/.claude/kit-settings.json` onto `~/.claude/settings.json` via `jq`. Needed because `files/home/` is creation-only and Claude Code itself rewrites `settings.json` during normal use (theme picker, bypass-permissions accept, etc.), dropping unknown keys — this reasserts the kit's keys every boot without clobbering Claude Code's own.
 
 ## Pi agent config
 
@@ -164,4 +167,5 @@ rtk read <file>   # token-optimized file read (prefer over cat)
 
 ```bash
 devbox run renovate-dry-run   # test Renovate config locally (LOG_LEVEL=debug, outputs to /tmp/renovate-dry-run.log)
+devbox run run-claude-local   # build + load the claude template and run a sandbox against the local ./claude kit (no registry/kit push)
 ```
