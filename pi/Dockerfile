@@ -8,7 +8,7 @@ ARG NODE_VERSION="24.21.0"
 ARG TARGETARCH
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl ca-certificates git fd-find jq ripgrep gnupg \
+    && apt-get install -y --no-install-recommends curl ca-certificates git fd-find jq ripgrep gnupg xz-utils \
     && ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -40,6 +40,21 @@ RUN git clone --depth 1 --branch "${CAVEMAN_VERSION}" https://github.com/JuliusB
     && mkdir -p ~/.agents/skills \
     && cp -r /tmp/caveman/skills/* ~/.agents/skills/ \
     && rm -rf /tmp/caveman
+
+# install nix (single-user, pre-baked at build time so devbox never needs
+# network access to install it at sandbox runtime — devbox detects an
+# existing nix install and skips its own installer)
+ARG NIX_VERSION
+USER root
+RUN mkdir -m 0755 /nix && chown agent:agent /nix
+USER agent
+RUN curl -fsSL "https://releases.nixos.org/nix/nix-${NIX_VERSION}/install" -o /tmp/nix-install.sh \
+    && EXPECTED=$(curl -fsSL "https://releases.nixos.org/nix/nix-${NIX_VERSION}/install.sha256" | awk '{print $1}') \
+    && ACTUAL=$(sha256sum /tmp/nix-install.sh | awk '{print $1}') \
+    && test -n "$EXPECTED" && test "$EXPECTED" = "$ACTUAL" \
+    && sh /tmp/nix-install.sh --no-daemon \
+    && rm -f /tmp/nix-install.sh
+ENV PATH="/home/agent/.nix-profile/bin:${PATH}"
 
 # install devbox
 ARG DEVBOX_VERSION

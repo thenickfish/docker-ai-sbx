@@ -33,6 +33,25 @@ RUN git clone --depth 1 --branch "${STATUSLINE_VERSION}" https://github.com/dani
     && chmod +x ~/.claude/statusline/statusline.sh \
     && rm -rf /tmp/statusline
 
+# install nix (single-user, pre-baked at build time so devbox never needs
+# network access to install it at sandbox runtime — devbox detects an
+# existing nix install and skips its own installer)
+ARG NIX_VERSION
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends xz-utils \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+RUN mkdir -m 0755 /nix && chown agent:agent /nix
+USER agent
+RUN curl -fsSL "https://releases.nixos.org/nix/nix-${NIX_VERSION}/install" -o /tmp/nix-install.sh \
+    && EXPECTED=$(curl -fsSL "https://releases.nixos.org/nix/nix-${NIX_VERSION}/install.sha256" | awk '{print $1}') \
+    && ACTUAL=$(sha256sum /tmp/nix-install.sh | awk '{print $1}') \
+    && test -n "$EXPECTED" && test "$EXPECTED" = "$ACTUAL" \
+    && sh /tmp/nix-install.sh --no-daemon \
+    && rm -f /tmp/nix-install.sh
+ENV PATH="/home/agent/.nix-profile/bin:${PATH}"
+
 # install devbox
 ARG DEVBOX_VERSION
 ARG TARGETARCH
@@ -57,8 +76,8 @@ RUN FILENAME="op_linux_${TARGETARCH}_v${OP_VERSION}.zip" \
 
 # test stage — assertions only, not shipped
 FROM base AS test
-COPY ["spec.yaml", "test.py", "./"]
-COPY files/ ./files/
+COPY --chown=agent:agent ["spec.yaml", "test.py", "./"]
+COPY --chown=agent:agent files/ ./files/
 RUN pip install pyyaml --break-system-packages && python3 test.py
 
 # final image
