@@ -20,6 +20,10 @@ class TestImageAssertions(unittest.TestCase):
         r = subprocess.run("devbox version", shell=True, capture_output=True)
         self.assertEqual(r.returncode, 0)
 
+    def test_nix_installed(self):
+        r = subprocess.run("nix --version", shell=True, capture_output=True)
+        self.assertEqual(r.returncode, 0)
+
     def test_op_installed(self):
         r = subprocess.run("op --version", shell=True, capture_output=True)
         self.assertEqual(r.returncode, 0)

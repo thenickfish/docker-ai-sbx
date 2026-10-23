@@ -12,6 +12,9 @@ variable "CAVEMAN_COMMIT"  { default = "8b0c1d3699b8d83e87fe4605b378da20c41555e0
 # renovate: datasource=github-releases depName=jetify-com/devbox tracking=single
 variable "DEVBOX_VERSION" { default = "0.18.3" }
 
+# renovate: datasource=github-releases depName=NixOS/nix tracking=single
+variable "NIX_VERSION" { default = "2.35.2" }
+
 # renovate: datasource=docker depName=1password/op
 variable "OP_VERSION" { default = "2.39.0" }
 
@@ -31,6 +34,7 @@ target "_common" {
     CAVEMAN_VERSION    = CAVEMAN_VERSION
     CAVEMAN_COMMIT     = CAVEMAN_COMMIT
     DEVBOX_VERSION     = DEVBOX_VERSION
+    NIX_VERSION        = NIX_VERSION
     OP_VERSION         = OP_VERSION
     STATUSLINE_VERSION = STATUSLINE_VERSION
     STATUSLINE_COMMIT  = STATUSLINE_COMMIT
