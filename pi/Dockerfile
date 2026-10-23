@@ -52,7 +52,7 @@ RUN curl -fsSL "https://releases.nixos.org/nix/nix-${NIX_VERSION}/install" -o /t
     && EXPECTED=$(curl -fsSL "https://releases.nixos.org/nix/nix-${NIX_VERSION}/install.sha256" | awk '{print $1}') \
     && ACTUAL=$(sha256sum /tmp/nix-install.sh | awk '{print $1}') \
     && test -n "$EXPECTED" && test "$EXPECTED" = "$ACTUAL" \
-    && sh /tmp/nix-install.sh --no-daemon \
+    && NIX_CONFIG="filter-syscalls = false" sh /tmp/nix-install.sh --no-daemon \
     && rm -f /tmp/nix-install.sh
 ENV PATH="/home/agent/.nix-profile/bin:${PATH}"
 
