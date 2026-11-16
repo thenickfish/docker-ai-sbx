@@ -2,15 +2,15 @@ variable "REGISTRY" { default = "ghcr.io/thenickfish" }
 variable "GIT_SHA"  { default = "latest" }
 
 # renovate: datasource=github-releases depName=rtk-ai/rtk
-variable "RTK_VERSION" { default = "v0.49.0" }
-variable "RTK_COMMIT"  { default = "b1c0dc00649c50fbe8930f849c800d4d6ca12091" }
+variable "RTK_VERSION" { default = "v0.52.0" }
+variable "RTK_COMMIT"  { default = "b35f2c912bd41ab96593401bfdf213ebbcca1723" }
 
 # renovate: datasource=github-tags depName=JuliusBrussee/caveman
 variable "CAVEMAN_VERSION" { default = "v2.7.0" }
 variable "CAVEMAN_COMMIT"  { default = "8b0c1d3699b8d83e87fe4605b378da20c41555e0" }
 
 # renovate: datasource=github-releases depName=jetify-com/devbox tracking=single
-variable "DEVBOX_VERSION" { default = "0.18.3" }
+variable "DEVBOX_VERSION" { default = "0.19.0" }
 
 # renovate: datasource=github-releases depName=NixOS/nix tracking=single
 variable "NIX_VERSION" { default = "2.35.2" }
@@ -19,8 +19,8 @@ variable "NIX_VERSION" { default = "2.35.2" }
 variable "OP_VERSION" { default = "2.39.0" }
 
 # renovate: datasource=github-releases depName=daniel3303/ClaudeCodeStatusLine
-variable "STATUSLINE_VERSION" { default = "v1.4.4" }
-variable "STATUSLINE_COMMIT"  { default = "5da96959df726707fe8ff41c5645b4f7b8c7eac9" }
+variable "STATUSLINE_VERSION" { default = "v1.4.5" }
+variable "STATUSLINE_COMMIT"  { default = "738c365deccb7186714f8627e3e7ef184b85baef" }
 
 group "default" {
   targets = ["claude", "pi"]
