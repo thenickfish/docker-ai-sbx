@@ -7,7 +7,7 @@ on:
 
 jobs:
   test-and-push:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       packages: write
@@ -51,6 +51,6 @@ jobs:
         if: github.event_name == 'push'
         run: |
           for ref in latest ${{ github.sha }}; do
-            docker buildx build ./claude-kit -f ./claude-kit/spec.yaml --push -t ghcr.io/thenickfish/docker-ai-sbx-claude-kit:$ref
-            docker buildx build ./pi-kit -f ./pi-kit/spec.yaml --push -t ghcr.io/thenickfish/docker-ai-sbx-pi-kit:$ref
+            docker buildx build ./claude-kit -f ./claude-kit/spec.yaml --platform linux/amd64,linux/arm64 --push -t ghcr.io/thenickfish/docker-ai-sbx-claude-kit:$ref
+            docker buildx build ./pi-kit -f ./pi-kit/spec.yaml --platform linux/amd64,linux/arm64 --push -t ghcr.io/thenickfish/docker-ai-sbx-pi-kit:$ref
           done

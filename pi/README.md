@@ -15,19 +15,29 @@ sbx run shell --template ghcr.io/thenickfish/docker-ai-sbx-pi:latest --kit ghcr.
 
 ### Zsh alias
 
-Add to `~/.zshrc` to auto-create on first run and re-attach on subsequent runs:
+Add to `~/.zshrc`. Runs Pi in a sandbox for the current directory (`shell-<dir>`) using the latest image and kit. If that sandbox already exists you are asked to attach or delete and re-create it (re-creating is how you pick up new image/kit versions). Extra arguments go to Pi.
 
 ```zsh
 pi() {
-  local tmp=$(mktemp)
-  sbx run shell --template ghcr.io/thenickfish/docker-ai-sbx-pi:latest --kit ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest 2>"$tmp" || {
-    if grep -q "already exists" "$tmp"; then
-      sbx run shell
-    else
-      cat "$tmp" >&2
-    fi
-  }
-  rm -f "$tmp"
+  local name="shell-${PWD:t}"
+  name=${name//[^A-Za-z0-9.-]/-}
+  local -a args=()
+  (( $# )) && args=(-- "$@")
+
+  if sbx ls 2>/dev/null | awk -v n="$name" 'NR > 1 && $1 == n { f = 1 } END { exit !f }'; then
+    local choice
+    read -k 1 "choice?Sandbox '$name' exists. [a]ttach, [r]e-create, [c]ancel? "
+    echo
+    case $choice in
+      a|A) sbx run --name "$name" "${args[@]}"; return ;;
+      r|R) sbx rm --force "$name" || return ;;
+      *) return 0 ;;
+    esac
+  fi
+
+  sbx run shell --name "$name" \
+    --template ghcr.io/thenickfish/docker-ai-sbx-pi:latest \
+    --kit ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest "${args[@]}"
 }
 ```
 

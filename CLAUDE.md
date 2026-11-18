@@ -109,8 +109,8 @@ Lookup: `git ls-remote https://github.com/actions/checkout` or the releases page
 ```bash
 # Build & push both images + kits (requires GHCR login)
 docker buildx bake --push && \
-  docker buildx build ./claude-kit -f ./claude-kit/spec.yaml --push -t ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest && \
-  docker buildx build ./pi-kit -f ./pi-kit/spec.yaml --push -t ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
+  docker buildx build ./claude-kit -f ./claude-kit/spec.yaml --platform linux/amd64,linux/arm64 --push -t ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest && \
+  docker buildx build ./pi-kit -f ./pi-kit/spec.yaml --platform linux/amd64,linux/arm64 --push -t ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
 
 # Run from published artifacts (CI pushes on merge to main)
 sbx run claude --template ghcr.io/thenickfish/docker-ai-sbx-claude:latest --kit ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest
