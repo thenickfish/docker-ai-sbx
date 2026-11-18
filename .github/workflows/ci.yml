@@ -40,25 +40,12 @@ jobs:
             --set "*.cache-from=type=gha" \
             --set "*.cache-to=type=gha,mode=max"
 
-      - name: Install sbx and validate
-        # run: curl -fsSL https://desktop.docker.com/sbx/install.sh | sh
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate kits
+        # The docker/sandbox-kit:3 build frontend validates the descriptor and
+        # fails on any schema error. No sbx install or Docker sign-in needed.
         run: |
-          git clone --filter=blob:none --sparse https://github.com/docker/docker-install.git /tmp/docker-install
-          git -C /tmp/docker-install sparse-checkout set --no-cone install.sh
-          # renovate: datasource=git-refs depName=https://github.com/docker/docker-install currentValue=master
-          git -C /tmp/docker-install checkout 02cb80d6c7d24c85a458ae31d166a6c535c7a37a
-          sudo REPO_ONLY=1 sh /tmp/docker-install/install.sh
-          sudo apt-get update
-          # Pinned: v3 kits need >=0.54 (v0.47.0+ also requires daemon + Docker sign-in
-          # for some local kit commands). SBX_KIT_BUILDER=host builds kits with the runner's buildx.
-          sudo apt-get install -y docker-sbx=0.54.0-1~ubuntu.24.04~noble
-          sbx version
-          echo "$GH_TOKEN" | sbx secret set --registry ghcr.io --password-stdin
-          export SBX_KIT_BUILDER=host
-          sbx kit validate ./claude-kit
-          sbx kit validate ./pi-kit
+          docker buildx build ./claude-kit -f ./claude-kit/spec.yaml --output type=cacheonly
+          docker buildx build ./pi-kit -f ./pi-kit/spec.yaml --output type=cacheonly
 
       - name: Push kit
         if: github.event_name == 'push'
