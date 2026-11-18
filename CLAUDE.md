@@ -15,34 +15,36 @@ When adding new tools, do the following:
 ## Kit vs Template
 
 - **Template** — the Docker image (built via `docker-bake.hcl`, pushed to GHCR)
-- **Kit** — the mixin overlay: `spec.yaml` + any config assets (no image build). Pushed separately via `sbx kit push`. Runs at sandbox start.
+- **Kit** — the v3 mixin overlay: `claude-kit/spec.yaml`, `pi-kit/spec.yaml` (declaration only, no image build). Pushed separately via `docker buildx build ./<kit> -f ./<kit>/spec.yaml --push -t <ref>` (the v3 build frontend; `sbx kit push` only handles v1/v2). Runs at sandbox start.
 
-When `sbx run` is called: template image is pulled, then the kit's static files and startup commands execute on top.
+When `sbx run` is called: template image is pulled, then the kit's lifecycle hooks (install once, startup every boot) and agent-context are composed on top of the v3 workload.
 
-## Critical: spec.yaml and files/ are source of truth for sandbox config
+## Critical: the kit specs are source of truth for sandbox config
 
-Both kits use `schemaVersion: "2"`. Never edit kit-managed files directly inside a running sandbox — they are overwritten on recreation.
+Both kits use `schemaVersion: "3"` (`kind: mixin`, `# syntax=docker/sandbox-kit:3`). Spec: https://github.com/docker/sandbox-kit-spec (docs/spec/SPEC-v3.md). The built-in `claude` and `shell` agents are v3 workloads, and v1/v2 and v3 kits cannot be mixed, so the kits must stay v3. Never edit kit-managed files directly inside a running sandbox, they are overwritten on recreation.
 
-**To change sandbox behavior: edit `spec.yaml` or files under `claude/files/`**, not the sandbox files.
+**To change sandbox behavior: edit `claude-kit/spec.yaml` or `pi-kit/spec.yaml`**, not the sandbox files.
 
-### What the claude kit writes
+Kit identity in v3 is the directory basename (there is no `name` field), so the kit dirs must not collide with a workload name. That is why they are `claude-kit/` and `pi-kit/`, not `claude/` and `pi/`.
 
-Static files (applied once, at sandbox creation only, via `files/home/`):
-- `~/.claude/kit-settings.json` — rtk `PreToolUse` hook, `skipDangerousModePermissionPrompt: true`, caveman plugin enabled, `statusLine` command. Not read directly by Claude Code — it's the merge source below.
-- `~/.claude/CLAUDE.md` — sandbox instructions (caveman, network policy, devbox guidance, op CLI)
+Both kits are declaration-only (no Dockerfile): all tools (rtk, caveman, nix, devbox, op, statusline, pi) live in the template images, built from `claude/Dockerfile` and `pi/Dockerfile`, and used via `--template`. Do not drop `--template`.
 
-One-time install (`setup.install`, runs as root, at creation only):
-- Appends `unset GH_TOKEN` to `/etc/sandbox-persistent.sh`
+### What the claude kit declares (`claude-kit/spec.yaml`)
 
-Every-start startup (`setup.startup`, runs as agent, on every sandbox start):
-- Deep-merges `~/.claude/kit-settings.json` onto `~/.claude/settings.json` via `jq`. Needed because `files/home/` is creation-only and Claude Code itself rewrites `settings.json` during normal use (theme picker, bypass-permissions accept, etc.), dropping unknown keys — this reasserts the kit's keys every boot without clobbering Claude Code's own.
+- `lifecycle@1` `install` (root, once at creation): appends `unset GH_TOKEN` to `/etc/sandbox-persistent.sh`
+- `lifecycle@1` `startup` (agent, every start):
+  - deep-merges the kit settings JSON (rtk `PreToolUse` hook, `skipDangerousModePermissionPrompt`, caveman plugin, `statusLine`) onto `~/.claude/settings.json` via `jq`. The JSON is a heredoc inside the startup command. Needed because Claude Code rewrites `settings.json` and drops unknown keys.
+  - appends an `@import` of `~/.claude/kits-agent-context/claude-kit.md` to `~/.claude/CLAUDE.md`. v3 delivers kit guidance as a lazy index entry, so without the import the "activate /caveman full" line never fires at session start.
+- `agent-context@2`: sandbox guidance (caveman, network policy, devbox, op). Inline `content`, no `directory` (tool mixin).
+
+Validate: `SBX_KIT_BUILDER=host sbx kit validate ./claude-kit` (needs Docker running), or `SBX_KIT_BUILDER=sandbox`.
 
 ## Pi agent config
 
 Pi is a separate coding agent (not Claude Code). It auto-starts in the shell sandbox when an interactive terminal opens.
 
 Key files in `pi/`:
-- `spec.yaml` — network policy (allows `localhost` for Ollama), no startup commands needed
+- `pi-kit/spec.yaml` (kit, outside `pi/`) — network policy (allows `localhost` for Ollama), no startup commands needed
 - `AGENTS.md` — Pi's equivalent of CLAUDE.md (caveman activation)
 - `APPEND_SYSTEM.md` — appended to Pi's system prompt (accuracy/behavior instructions)
 - `nebula.json` — Pi color theme (Catppuccin Mocha palette)
@@ -107,16 +109,16 @@ Lookup: `git ls-remote https://github.com/actions/checkout` or the releases page
 ```bash
 # Build & push both images + kits (requires GHCR login)
 docker buildx bake --push && \
-  sbx kit push ./claude ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest && \
-  sbx kit push ./pi    ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
+  docker buildx build ./claude-kit -f ./claude-kit/spec.yaml --push -t ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest && \
+  docker buildx build ./pi-kit -f ./pi-kit/spec.yaml --push -t ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
 
 # Run from published artifacts (CI pushes on merge to main)
 sbx run claude --template ghcr.io/thenickfish/docker-ai-sbx-claude:latest --kit ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest
 sbx run shell  --template ghcr.io/thenickfish/docker-ai-sbx-pi:latest    --kit ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
 
 # Local build (no push)
-docker buildx bake claude-local --load && docker image save sbx-claude:latest -o sbx-claude.tar && sbx template load sbx-claude.tar && sbx run claude --template sbx-claude:latest --kit ./claude
-docker buildx bake pi-local     --load && docker image save sbx-pi:latest    -o sbx-pi.tar    && sbx template load sbx-pi.tar    && sbx run shell  --template sbx-pi:latest    --kit ./pi
+docker buildx bake claude-local --load && docker image save sbx-claude:latest -o sbx-claude.tar && sbx template load sbx-claude.tar && sbx run claude --template sbx-claude:latest --kit ./claude-kit
+docker buildx bake pi-local     --load && docker image save sbx-pi:latest    -o sbx-pi.tar    && sbx template load sbx-pi.tar    && sbx run shell  --template sbx-pi:latest    --kit ./pi-kit
 
 # Cleanup
 sbx rm claude-sbx
@@ -131,7 +133,7 @@ sbx rm shell-sbx
 docker buildx bake claude-test-local
 ```
 
-`test.py` asserts: rtk installed, devbox installed, caveman skills/plugin present, spec.yaml startup produces correct `settings.json` and `CLAUDE.md`.
+`test.py` asserts: rtk installed, devbox installed, caveman skills/plugin present, `claude-kit/spec.yaml` startup (passed to the build as the `kit` named context) produces correct `settings.json` and the `CLAUDE.md` import.
 
 > This sandbox has no Docker daemon — tests must be run on the host.
 
@@ -139,7 +141,7 @@ docker buildx bake claude-test-local
 
 The proxy handles git HTTPS credentials automatically. For `gh` CLI API calls, a separate one-time setup is required on the host.
 
-The startup script in `claude/spec.yaml` unsets the proxy's `GH_TOKEN` sentinel so `gh` falls back to `GITHUB_TOKEN`. The proxy then substitutes the real token on outbound `api.github.com` requests.
+The install hook in `claude-kit/spec.yaml` unsets the proxy's `GH_TOKEN` sentinel so `gh` falls back to `GITHUB_TOKEN`. The proxy then substitutes the real token on outbound `api.github.com` requests.
 
 **One-time host setup:**
 
@@ -167,5 +169,5 @@ rtk read <file>   # token-optimized file read (prefer over cat)
 
 ```bash
 devbox run renovate-dry-run   # test Renovate config locally (LOG_LEVEL=debug, outputs to /tmp/renovate-dry-run.log)
-devbox run run-claude-local   # build + load the claude template and run a sandbox against the local ./claude kit (no registry/kit push)
+devbox run run-claude-local   # build + load the claude template and run a sandbox against the local ./claude-kit kit (no registry/kit push)
 ```

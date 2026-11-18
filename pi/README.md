@@ -43,7 +43,7 @@ The sandbox connects to Ollama running on your host machine.
 ## Local build & run
 
 ```bash
-docker buildx bake pi-local --load && docker image save sbx-pi:latest -o sbx-pi.tar && sbx template load sbx-pi.tar && sbx run shell --template sbx-pi:latest --kit ./pi
+docker buildx bake pi-local --load && docker image save sbx-pi:latest -o sbx-pi.tar && sbx template load sbx-pi.tar && sbx run shell --template sbx-pi:latest --kit ./pi-kit
 ```
 
 Remove sandbox: `sbx rm shell-sbx`

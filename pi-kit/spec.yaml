@@ -1,0 +1,15 @@
+# syntax=docker/sandbox-kit:3
+# https://github.com/docker/sandbox-kit-spec/blob/main/docs/spec/SPEC-v3.md
+schemaVersion: "3"
+kind: mixin
+displayName: thenickfish Pi
+description: Declaration-only mixin for the shell workload that allows Ollama connectivity for the Pi agent. Pi itself ships in the docker-ai-sbx-pi template.
+sourceUrl: https://github.com/thenickfish/docker-ai-sbx
+version: "2.0.0"
+
+capabilities:
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow:
+          - localhost # allow ollama connectivity

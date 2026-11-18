@@ -1,14 +1,38 @@
 #!/usr/bin/env python3
-import unittest, subprocess, json, yaml
+import unittest, subprocess, json, re, yaml
 from pathlib import Path
 
 HOME = Path.home()
 SETTINGS = HOME / ".claude/settings.json"
 STATUSLINE = HOME / ".claude/statusline/statusline.sh"
 
-FILES_HOME = Path("files/home")
-KIT_SETTINGS = FILES_HOME / ".claude/kit-settings.json"
-KIT_CLAUDE_MD = FILES_HOME / ".claude/CLAUDE.md"
+# claude-kit/spec.yaml is passed in as the `kit` named context (see docker-bake.hcl)
+SPEC_PATH = "kit-spec.yaml"
+KIT_IMPORT = "@/home/agent/.claude/kits-agent-context/claude-kit.md"
+
+
+def load_spec():
+    with open(SPEC_PATH) as f:
+        return yaml.safe_load(f)
+
+
+def capability(spec, type_prefix):
+    return next(c for c in spec["capabilities"] if c["type"].startswith(type_prefix))
+
+
+def startup_commands(spec):
+    return capability(spec, "com.docker.sandbox/lifecycle")["config"]["startup"]
+
+
+def kit_settings(spec):
+    """The settings.json fragment embedded as a heredoc in the first startup hook."""
+    script = startup_commands(spec)[0]["command"][-1]
+    m = re.search(r"<<'KIT_SETTINGS_EOF'[^\n]*\n[^\n]*\n(.*?)\n\s*KIT_SETTINGS_EOF", script, re.S)
+    return json.loads(m.group(1))
+
+
+def kit_claude_md(spec):
+    return capability(spec, "com.docker.sandbox/agent-context@2")["config"]["content"]
 
 
 class TestImageAssertions(unittest.TestCase):
@@ -39,8 +63,9 @@ class TestImageAssertions(unittest.TestCase):
 class TestKitFiles(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.settings = json.loads(KIT_SETTINGS.read_text())
-        cls.claude_md = KIT_CLAUDE_MD.read_text()
+        spec = load_spec()
+        cls.settings = kit_settings(spec)
+        cls.claude_md = kit_claude_md(spec)
 
     def test_rtk_hook(self):
         pre_tool_hooks = self.settings.get("hooks", {}).get("PreToolUse", [])
@@ -89,19 +114,19 @@ class TestKitFiles(unittest.TestCase):
 class TestKitDeployment(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        import shutil
-        with open("spec.yaml") as f:
-            cls.spec = yaml.safe_load(f)
-        # Simulate v2 kit delivery: files/home/ applied before startup commands
-        shutil.copytree("files/home", str(HOME), dirs_exist_ok=True)
+        cls.spec = load_spec()
+        # Simulate a freshly created sandbox: sbx writes a CLAUDE.md before startup hooks run
+        (HOME / ".claude").mkdir(parents=True, exist_ok=True)
+        (HOME / ".claude/CLAUDE.md").write_text("# sbx generated\n")
         minimal_env = {"PATH": "/usr/bin:/bin", "HOME": str(HOME)}
-        for entry in cls.spec["setup"].get("startup", []):
+        for entry in startup_commands(cls.spec):
             r = subprocess.run(entry["command"], env=minimal_env)
             if r.returncode != 0:
                 raise RuntimeError(f"startup command failed with exit {r.returncode}")
 
     def test_schema_version(self):
-        self.assertEqual(self.spec["schemaVersion"], "2")
+        self.assertEqual(self.spec["schemaVersion"], "3")
+        self.assertEqual(self.spec["kind"], "mixin")
 
     def test_deployed_rtk_hook(self):
         settings = json.loads(SETTINGS.read_text())
@@ -128,8 +153,7 @@ class TestKitDeployment(unittest.TestCase):
 
     def test_deployed_claude_md(self):
         claude_md = (HOME / ".claude/CLAUDE.md").read_text()
-        self.assertIn("activate /caveman full immediately", claude_md)
-        self.assertIn("Outbound network is restricted", claude_md)
+        self.assertIn(KIT_IMPORT, claude_md.splitlines())
 
     def test_statusline_script_runs(self):
         self.assertTrue(STATUSLINE.exists())
@@ -179,10 +203,7 @@ class TestSettingsMergePreservesUserKeys(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        import shutil
-        with open("spec.yaml") as f:
-            cls.spec = yaml.safe_load(f)
-        shutil.copytree("files/home", str(HOME), dirs_exist_ok=True)
+        cls.spec = load_spec()
         (HOME / ".claude").mkdir(parents=True, exist_ok=True)
         (HOME / ".claude/settings.json").write_text(json.dumps({
             "themeId": 1,
@@ -190,7 +211,7 @@ class TestSettingsMergePreservesUserKeys(unittest.TestCase):
             "bypassPermissionsModeAccepted": True,
         }))
         minimal_env = {"PATH": "/usr/bin:/bin", "HOME": str(HOME)}
-        for entry in cls.spec["setup"].get("startup", []):
+        for entry in startup_commands(cls.spec):
             r = subprocess.run(entry["command"], env=minimal_env)
             if r.returncode != 0:
                 raise RuntimeError(f"startup command failed with exit {r.returncode}")

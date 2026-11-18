@@ -44,6 +44,7 @@ target "_common" {
 target "claude" {
   inherits = ["_common"]
   context  = "./claude"
+  contexts = { kit = "./claude-kit" }
   tags = [
     "${REGISTRY}/docker-ai-sbx-claude:latest",
     "${REGISTRY}/docker-ai-sbx-claude:${GIT_SHA}",

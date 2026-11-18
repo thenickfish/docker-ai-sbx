@@ -1,0 +1,109 @@
+# syntax=docker/sandbox-kit:3
+# https://github.com/docker/sandbox-kit-spec/blob/main/docs/spec/SPEC-v3.md
+schemaVersion: "3"
+kind: mixin
+displayName: thenickfish Claude
+description: >-
+  Declaration-only mixin for the claude workload: re-asserts rtk, caveman and
+  statusLine settings on every start, unsets the GH_TOKEN sentinel, and adds
+  sandbox guidance. Tools themselves ship in the docker-ai-sbx-claude template.
+sourceUrl: https://github.com/thenickfish/docker-ai-sbx
+version: "2.0.0"
+
+capabilities:
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      install:
+        # Unset GH_TOKEN sentinel so gh CLI falls back to GITHUB_TOKEN injected
+        # via `sbx secret set-custom --host api.github.com --env GITHUB_TOKEN`.
+        # The proxy intercepts git HTTPS ops at the MITM layer, unaffected.
+        - command: "echo 'unset GH_TOKEN' >> /etc/sandbox-persistent.sh"
+          user: "0"
+          description: Unset GH_TOKEN sentinel
+      startup:
+        # Claude Code rewrites settings.json during normal use and drops unknown
+        # keys, so deep-merge the kit's keys back in on every start.
+        - command:
+            - sh
+            - -c
+            - |
+              SETTINGS=/home/agent/.claude/settings.json
+              mkdir -p /home/agent/.claude
+              [ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
+              jq -s '.[0] * .[1]' "$SETTINGS" - > "$SETTINGS.tmp" <<'KIT_SETTINGS_EOF' \
+                && mv "$SETTINGS.tmp" "$SETTINGS"
+              {
+                "hooks": {
+                  "PreToolUse": [
+                    {
+                      "matcher": "Bash",
+                      "hooks": [
+                        {
+                          "type": "command",
+                          "command": "rtk hook claude"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "skipDangerousModePermissionPrompt": true,
+                "enabledPlugins": {
+                  "caveman@caveman": true
+                },
+                "statusLine": {
+                  "type": "command",
+                  "command": "/home/agent/.claude/statusline/statusline.sh"
+                }
+              }
+              KIT_SETTINGS_EOF
+          user: "1000"
+          description: Re-assert kit-managed settings.json keys (rtk hook, statusLine, caveman plugin)
+        # v3 delivers kit guidance as a lazy index entry (read only when relevant),
+        # so the caveman session-start instruction would never fire. @import the
+        # kit's guidance file from CLAUDE.md so Claude Code loads it eagerly.
+        - command:
+            - sh
+            - -c
+            - |
+              MD=/home/agent/.claude/CLAUDE.md
+              IMPORT='@/home/agent/.claude/kits-agent-context/claude-kit.md'
+              touch "$MD"
+              grep -qxF "$IMPORT" "$MD" || printf '\n%s\n' "$IMPORT" >> "$MD"
+          user: "1000"
+          description: Eagerly import kit guidance into CLAUDE.md
+
+  - type: com.docker.sandbox/agent-context@2
+    config:
+      content: |
+        On session start: activate /caveman full immediately
+
+        ## Sandbox constraints
+
+        ### Platform
+        This session runs inside an isolated Docker sandbox (Linux), not the user's host machine. The workspace is bind-mounted from the host and shares the same filesystem with it, but the sandbox may be a different OS/architecture (e.g. Linux sandbox, macOS/ARM host).
+
+        **Strict rule: never run a command that can build, install, or cache platform-specific build artifacts directly inside the shared workspace.** This includes (not exhaustive): `devbox add`/`devbox run` (shell/package caches), `terraform init` (provider binaries), `node_modules` installs with native addons, Python venvs, compiled binaries, Go/Rust/Cargo build caches, and any package manager or build tool invoked at the repo root. These get built for the sandbox's OS/arch and silently break or clobber the host's copy when the host later reuses that same directory - this is not a "flag and proceed" case, it's a hard stop.
+
+        Before running any such command, either: (a) run it in a directory outside the shared workspace (scratchpad, `/tmp`, a container-local path) and copy only the platform-neutral results back, or (b) ask the user first if it must run in-place.
+
+        ### Network access
+        Outbound network is restricted to an allowlist. Blocked requests return HTTP 403.
+
+        **When a request is blocked: stop immediately. Do not retry, probe alternative URLs, or attempt workarounds.**
+
+        Tell the user exactly which domain is blocked and ask them to run on their host:
+        ```
+        sbx policy approval ls
+        sbx policy approval respond <approval-id> --option <option-id>
+        ```
+        Wait for confirmation before proceeding. The sandbox can grant one-time or persistent approval for any domain.
+
+        ## Local dev tools
+
+        ### devbox
+        Prefer devbox over system package managers (apt, npm -g, pip, brew). Use `devbox add <pkg>` to add packages and `devbox run <script>` for convenience scripts. This keeps deps isolated to the project and avoids polluting the system environment.
+
+        Always pin explicit versions: `devbox add pkg@<version>` (e.g. `devbox add node@22.0.0`). Never rely on unversioned `devbox add pkg` - it resolves to latest at install time and breaks reproducibility. Look up the current version first with `devbox search <pkg>`, then pin it.
+
+        ### 1Password CLI (op)
+        `op` is installed but there is no authenticated session. `op signin` and any vault/item operations will fail. You can explore available commands with `op --help` or `op <subcommand> --help`.

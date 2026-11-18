@@ -76,8 +76,8 @@ RUN FILENAME="op_linux_${TARGETARCH}_v${OP_VERSION}.zip" \
 
 # test stage — assertions only, not shipped
 FROM base AS test
-COPY --chown=agent:agent ["spec.yaml", "test.py", "./"]
-COPY --chown=agent:agent files/ ./files/
+COPY --chown=agent:agent test.py ./
+COPY --from=kit --chown=agent:agent spec.yaml ./kit-spec.yaml
 RUN pip install pyyaml --break-system-packages && python3 test.py
 
 # final image

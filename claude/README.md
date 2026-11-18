@@ -50,13 +50,13 @@ The startup script unsets the proxy's `GH_TOKEN` sentinel so `gh` falls back to 
 Neither command pushes images or the kit to the registry — both run entirely against local artifacts.
 
 ```bash
-devbox run run-claude-local   # build + load the template, run a sandbox against the local ./claude kit
+devbox run run-claude-local   # build + load the template, run a sandbox against the local ./claude-kit kit
 ```
 
 Equivalent raw command:
 
 ```bash
-docker buildx bake claude-local --load && docker image save sbx-claude:latest -o sbx-claude.tar && sbx template load sbx-claude.tar && sbx run claude --template sbx-claude:latest --kit ./claude
+docker buildx bake claude-local --load && docker image save sbx-claude:latest -o sbx-claude.tar && sbx template load sbx-claude.tar && sbx run claude --template sbx-claude:latest --kit ./claude-kit
 ```
 
 Remove sandbox: `sbx rm claude-sbx`

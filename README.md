@@ -20,6 +20,6 @@ CI builds and publishes both images on every push to `main`. To publish manually
 docker buildx bake --push
 
 # Kits
-sbx kit push ./claude ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest
-sbx kit push ./pi ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
+docker buildx build ./claude-kit -f ./claude-kit/spec.yaml --push -t ghcr.io/thenickfish/docker-ai-sbx-claude-kit:latest
+docker buildx build ./pi-kit -f ./pi-kit/spec.yaml --push -t ghcr.io/thenickfish/docker-ai-sbx-pi-kit:latest
 ```

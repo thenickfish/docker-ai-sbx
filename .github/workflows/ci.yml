@@ -51,18 +51,19 @@ jobs:
           git -C /tmp/docker-install checkout 02cb80d6c7d24c85a458ae31d166a6c535c7a37a
           sudo REPO_ONLY=1 sh /tmp/docker-install/install.sh
           sudo apt-get update
-          # Pinned: v0.47.0 requires daemon running + Docker sign-in for local kit
-          # validate/inspect/pull, which needs a PAT in CI. Unpin once that's set up.
-          sudo apt-get install -y docker-sbx=0.46.0-1~ubuntu.24.04~noble
+          # Pinned: v3 kits need >=0.54 (v0.47.0+ also requires daemon + Docker sign-in
+          # for some local kit commands). SBX_KIT_BUILDER=host builds kits with the runner's buildx.
+          sudo apt-get install -y docker-sbx=0.54.0-1~ubuntu.24.04~noble
           sbx version
           echo "$GH_TOKEN" | sbx secret set --registry ghcr.io --password-stdin
-          sbx kit validate ./claude
-          sbx kit validate ./pi
+          export SBX_KIT_BUILDER=host
+          sbx kit validate ./claude-kit
+          sbx kit validate ./pi-kit
 
       - name: Push kit
         if: github.event_name == 'push'
         run: |
           for ref in latest ${{ github.sha }}; do
-            sbx kit push ./claude ghcr.io/thenickfish/docker-ai-sbx-claude-kit:$ref
-            sbx kit push ./pi ghcr.io/thenickfish/docker-ai-sbx-pi-kit:$ref
+            docker buildx build ./claude-kit -f ./claude-kit/spec.yaml --push -t ghcr.io/thenickfish/docker-ai-sbx-claude-kit:$ref
+            docker buildx build ./pi-kit -f ./pi-kit/spec.yaml --push -t ghcr.io/thenickfish/docker-ai-sbx-pi-kit:$ref
           done
